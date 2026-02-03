@@ -1,3 +1,15 @@
 *
 !.gitignore
 !/sat-and-buy-apps/
+!/sat-and-buy-apps/**
+
+# Ignore generated artifacts inside sat-and-buy-apps
+sat-and-buy-apps/**/node_modules/
+sat-and-buy-apps/**/.next/
+sat-and-buy-apps/**/dist/
+sat-and-buy-apps/**/build/
+sat-and-buy-apps/**/.DS_Store
+sat-and-buy-apps/**/.git/
+
+sat-and-buy-apps/*.log
+sat-and-buy-apps/**/*.log
