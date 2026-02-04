@@ -21,7 +21,7 @@ const App = () => {
   AuthService.syncReduxWithLocalStorage();
 
   useEffect(() => {
-    if (reduxStore.getState().auth.isAuthenticated) {
+    if (AuthService.isAuthenticated()) {
       AuthService.refreshToken().catch(() => {
         reduxStore.dispatch({ type: "auth/logoutSuccess" });
       });

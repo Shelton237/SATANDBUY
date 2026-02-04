@@ -1,47 +1,55 @@
-import requests from "./httpService";
+import HttpService from "@/services/httpService";
+
+const API_BASE_URL = import.meta.env.VITE_APP_API_BASE_URL;
+
+const http = new HttpService(API_BASE_URL, {
+  "Content-Type": "application/json"
+});
 
 const AdminServices = {
-  registerAdmin: async (body) => {
-    return requests.post("/admin/register", body);
+  registerAdmin(body) {
+    return http.post("/admin/register", body);
   },
 
-  loginAdmin: async (body) => {
-    return requests.post(`/admin/login`, body);
+  loginAdmin(body) {
+    return http.post("/admin/login", body);
   },
 
-  forgetPassword: async (body) => {
-    return requests.put("/admin/forget-password", body);
+  forgetPassword(body) {
+    return http.put("/admin/forget-password", body);
   },
 
-  resetPassword: async (body) => {
-    return requests.put("/admin/reset-password", body);
+  resetPassword(body) {
+    return http.put("/admin/reset-password", body);
   },
 
-  signUpWithProvider: async (body) => {
-    return requests.post("/admin/signup", body);
+  signUpWithProvider(body) {
+    return http.post("/admin/signup", body);
   },
 
-  addStaff: async (body) => {
-    return requests.post("/admin/add", body);
-  },
-  getAllStaff: async (body) => {
-    return requests.get("/admin", body);
-  },
-  getStaffById: async (id, body) => {
-    return requests.post(`/admin/${id}`, body);
+  addStaff(body) {
+    return http.post("/admin/add", body);
   },
 
-  updateStaff: async (id, body) => {
-    return requests.put(`/admin/${id}`, body);
+  getAllStaff() {
+    return http.get("/admin");
   },
 
-  updateStaffStatus: async (id, body) => {
-    return requests.put(`/admin/update-status/${id}`, body);
+  getStaffById(id) {
+    return http.get(`/admin/${id}`);
   },
 
-  deleteStaff: async (id) => {
-    return requests.delete(`/admin/${id}`);
+  updateStaff(id, body) {
+    return http.put(`/admin/${id}`, body);
   },
+
+  updateStaffStatus(id, status) {
+    return http.put(`/admin/update-status/${id}`, { status });
+  },
+
+  deleteStaff(id) {
+    return http.delete(`/admin/${id}`);
+  }
 };
 
 export default AdminServices;

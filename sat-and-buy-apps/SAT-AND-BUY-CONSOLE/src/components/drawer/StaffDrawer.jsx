@@ -1,5 +1,5 @@
 // components/drawer/StaffDrawer.jsx
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useCallback } from "react";
 import { Scrollbars } from "react-custom-scrollbars-2";
 import { Card, CardBody, Input } from "@windmill/react-ui";
 import { useTranslation } from "react-i18next";
@@ -12,11 +12,9 @@ import SelectRole from "@/components/form/selectOption/SelectRole";
 import DrawerButton from "@/components/form/button/DrawerButton";
 import LabelArea from "@/components/form/selectOption/LabelArea";
 import Uploader from "@/components/image-uploader/Uploader";
-import useStaffRoles from "@/hooks/useStaffRoles";
 
-const StaffDrawer = ({ onUserAdded, onUserUpdated }) => {
+const StaffDrawer = ({ staffId, roles = [], onUserAdded, onUserUpdated }) => {
   const { t } = useTranslation();
-  const { roles, loading: rolesLoading, error: rolesError } = useStaffRoles();
 
   const {
     register,
@@ -31,21 +29,20 @@ const StaffDrawer = ({ onUserAdded, onUserUpdated }) => {
     language,
     setLanguage,
     resData,
-  } = useStaffSubmit();
+  } = useStaffSubmit(staffId);
 
-  const isUpdate = !!resData?.id;
+  const isUpdate = Boolean(staffId);
 
-  const roleOptions = roles.map(role => ({
+  const roleOptions = roles.map((role) => ({
     value: role.name,
     label: role.description || role.name,
-    original: role
+    original: role,
   }));
 
   const defaultRoleValue = (() => {
-    const userRole = resData?.roles?.[0];
-    if (!userRole) return "";
-    const roleName = typeof userRole === "string" ? userRole : userRole.name;
-    return roleOptions.some(opt => opt.value === roleName) ? roleName : "";
+    const roleName = resData?.role || resData?.roles?.[0];
+    if (!roleName) return "";
+    return roleOptions.some((opt) => opt.value === roleName) ? roleName : "";
   })();
 
   const formFields = [
@@ -176,11 +173,7 @@ const StaffDrawer = ({ onUserAdded, onUserUpdated }) => {
                 <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
                   <LabelArea label={t("StaffRole")} />
                   <div className="col-span-8 sm:col-span-4">
-                    {rolesLoading ? (
-                      <div className="text-sm text-gray-500 p-2 bg-gray-50 rounded">
-                        Chargement des rôles...
-                      </div>
-                    ) : roleOptions.length > 0 ? (
+                    {roleOptions.length > 0 ? (
                       <SelectRole
                         register={register}
                         label={t("Role")}
@@ -191,7 +184,6 @@ const StaffDrawer = ({ onUserAdded, onUserUpdated }) => {
                     ) : (
                       <div className="text-sm text-red-500 p-2 bg-red-50 rounded">
                         <p>Aucun rôle valide disponible</p>
-                        {rolesError && <p className="text-xs mt-1">{rolesError}</p>}
                       </div>
                     )}
                     <Error errorName={errors.role} />
@@ -209,3 +201,4 @@ const StaffDrawer = ({ onUserAdded, onUserUpdated }) => {
 };
 
 export default StaffDrawer;
+

@@ -1,30 +1,38 @@
-import { KEYCLOAK_BASE_URL, KEYCLOAK_CONFIG } from "@/config/keycloak";
-import UserService from "@/services/UserService";
 import HttpService from "@/services/httpService";
 import store from "@/reduxStore/store";
 
-const http = new HttpService(KEYCLOAK_BASE_URL, {
-  "Content-Type": "application/x-www-form-urlencoded"
+const API_BASE_URL = import.meta.env.VITE_APP_API_BASE_URL;
+const TOKEN_TTL_SECONDS = 24 * 60 * 60; // Backend JWT expires in 1 day
+
+const http = new HttpService(API_BASE_URL, {
+  "Content-Type": "application/json"
 });
 
+const mapAdminPayload = (data = {}) => {
+  const name =
+    typeof data.name === "object"
+      ? data.name?.en || Object.values(data.name)[0]
+      : data.name || "Admin";
+
+  return {
+    id: data._id,
+    name,
+    email: data.email,
+    phone: data.phone,
+    image: data.image,
+    role: data.role || "Admin"
+  };
+};
+
 class AuthService {
-  static async login(username, password) {
-    const params = new URLSearchParams();
-    params.append("grant_type", "password");
-    params.append("client_id", KEYCLOAK_CONFIG.clientId);
-    params.append("username", username);
-    params.append("password", password);
-    params.append("client_secret", KEYCLOAK_CONFIG.clientSecret);
-    params.append("scope", "openid");
-
-    const tokenData = (await http.post(KEYCLOAK_CONFIG.tokenEndpoint, params)).data;
-    const userInfo = await this.getUserInfo(tokenData.access_token);
-
+  static async login(email, password) {
+    const { data } = await http.post("/admin/login", { email, password });
+    const user = mapAdminPayload(data);
     const authData = {
-      ...userInfo,
-      token: tokenData.access_token,
-      refreshToken: tokenData.refresh_token,
-      expiresIn: tokenData.expires_in,
+      user,
+      token: data.token,
+      refreshToken: null,
+      expiresIn: TOKEN_TTL_SECONDS,
       timestamp: Date.now()
     };
 
@@ -32,33 +40,21 @@ class AuthService {
     return authData;
   }
 
-  static async getUserInfo(token) {
-    const res = await http.get(`/${KEYCLOAK_CONFIG.userInfoEndpoint}`, token);
-    return UserService.mapKeycloakUser(res.data);
-  }
-
   static async refreshToken() {
     const authData = this.getAuthData();
-    if (!authData?.refreshToken) throw new Error("No refresh token available");
+    if (!authData) {
+      throw new Error("No session available");
+    }
 
-    const params = new URLSearchParams();
-    params.append("grant_type", "refresh_token");
-    params.append("client_id", KEYCLOAK_CONFIG.clientId);
-    params.append("refresh_token", authData.refreshToken);
-    params.append("client_secret", KEYCLOAK_CONFIG.clientSecret);
+    const isExpired =
+      authData.timestamp + authData.expiresIn * 1000 <= Date.now();
 
-    const tokenData = (await http.post(KEYCLOAK_CONFIG.tokenEndpoint, params)).data;
+    if (isExpired) {
+      this.clearAuth();
+      throw new Error("Session expired");
+    }
 
-    const newAuthData = {
-      ...authData,
-      token: tokenData.access_token,
-      refreshToken: tokenData.refresh_token || authData.refreshToken,
-      expiresIn: tokenData.expires_in,
-      timestamp: Date.now()
-    };
-
-    this.#storeAuthData(newAuthData);
-    return newAuthData;
+    return authData;
   }
 
   static syncReduxWithLocalStorage() {
@@ -67,7 +63,7 @@ class AuthService {
       store.dispatch({
         type: "auth/loginSuccess",
         payload: {
-          user: authData,
+          user: authData.user || authData,
           token: authData.token
         }
       });
@@ -75,20 +71,6 @@ class AuthService {
   }
 
   static async logout() {
-    const authData = this.getAuthData();
-    if (authData?.refreshToken) {
-      const params = new URLSearchParams();
-      params.append("client_id", KEYCLOAK_CONFIG.clientId);
-      params.append("client_secret", KEYCLOAK_CONFIG.clientSecret);
-      params.append("refresh_token", authData.refreshToken);
-
-      try {
-        await http.post(KEYCLOAK_CONFIG.logoutEndpoint, params);
-        store.dispatch({ type: "auth/logoutSuccess" });
-      } catch (err) {
-        console.warn("Logout failed:", err.message);
-      }
-    }
     this.clearAuth();
   }
 
@@ -124,14 +106,17 @@ class AuthService {
   static #persistAuth(authData) {
     this.#storeAuthData(authData);
     store.dispatch({
-      type: "auth/updateAuth",
-      payload: authData
+      type: "auth/loginSuccess",
+      payload: {
+        user: authData.user || authData,
+        token: authData.token
+      }
     });
   }
 
   static clearAuth() {
     this.#clearAuthData();
-    store.dispatch({ type: "auth/clearAuth" });
+    store.dispatch({ type: "auth/logoutSuccess" });
   }
 }
 

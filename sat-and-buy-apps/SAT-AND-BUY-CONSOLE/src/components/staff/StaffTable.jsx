@@ -1,12 +1,10 @@
 // components/staff/StaffTable.js
-import { Avatar, TableBody, TableCell, TableRow } from "@windmill/react-ui";
+import { TableBody, TableCell, TableRow } from "@windmill/react-ui";
 import React from "react";
 
 import Status from "@/components/table/Status";
 import useUtilsFunction from "@/hooks/useUtilsFunction";
-import MainDrawer from "@/components/drawer/MainDrawer";
 import useToggleDrawer from "@/hooks/useToggleDrawer";
-import StaffDrawer from "@/components/drawer/StaffDrawer";
 import DeleteModal from "@/components/modal/DeleteModal";
 import EditDeleteButton from "@/components/table/EditDeleteButton";
 import ActiveInActiveButton from "@/components/table/ActiveInActiveButton";
@@ -17,18 +15,12 @@ const StaffTable = ({ staffs, lang }) => {
     serviceId,
     handleModalOpen,
     handleUpdate,
-    isSubmitting,
-    handleResetPassword,
   } = useToggleDrawer();
-
-  const { showDateFormat, showingTranslateValue } = useUtilsFunction();
+  const { showDateFormat } = useUtilsFunction();
 
   return (
     <>
       <DeleteModal id={serviceId} title={title} />
-      <MainDrawer>
-        <StaffDrawer id={serviceId} />
-      </MainDrawer>
 
       <TableBody>
         {staffs?.map((user) => {
@@ -55,7 +47,7 @@ const StaffTable = ({ staffs, lang }) => {
 
               <TableCell>
                 <span className="text-sm">
-                  {showDateFormat(user.createdTimestamp)}
+                  {showDateFormat(user.joiningDate || user.createdTimestamp)}
                 </span>
               </TableCell>
 
@@ -78,7 +70,7 @@ const StaffTable = ({ staffs, lang }) => {
 
 
               <TableCell className="text-center text-xs">
-                <Status status={user.enabled ? "Active" : "Inactive"} />
+                <Status status={user.status || (user.enabled ? "Active" : "Inactive")} />
               </TableCell>
 
               <TableCell className="text-center">
@@ -86,7 +78,7 @@ const StaffTable = ({ staffs, lang }) => {
                   id={user.id}
                   staff={user}
                   option="staff"
-                  status={user.enabled ? "Active" : "Inactive"}
+                  status={user.status || (user.enabled ? "Active" : "Inactive")}
                 />
               </TableCell>
 
@@ -94,10 +86,8 @@ const StaffTable = ({ staffs, lang }) => {
                 <EditDeleteButton
                   id={user.id}
                   staff={user}
-                  isSubmitting={isSubmitting}
                   handleUpdate={handleUpdate}
                   handleModalOpen={handleModalOpen}
-                  handleResetPassword={handleResetPassword}
                   title={fullName}
                 />
               </TableCell>

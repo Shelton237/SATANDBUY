@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import dayjs from "dayjs";
 import { notifyError, notifySuccess } from "@/utils/toast";
 import UserService from "@/services/UserService";
-import AuthService from "@/services/AuthService";
+import AdminServices from "@/services/AdminServices";
 
 const useStaffSubmit = (id) => {
   const [state, setState] = useState({
@@ -15,79 +15,88 @@ const useStaffSubmit = (id) => {
     isSubmitting: false,
   });
 
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm();
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+  } = useForm();
 
-  // 🚀 Crée le payload user
-  const buildUserData = (data) => ({
-    username: data.username || data.email,
-    email: data.email,
-    enabled: true,
-    firstName: data.firstName,
-    lastName: data.lastName,
-    attributes: {
-      phone: [data.phone || ""],
-      lang: [state.language],
-      image: [state.imageUrl || ""],
-      joiningDate: [state.selectedDate]
+  const buildStaffPayload = useCallback(
+    (data) => {
+      const fullName = `${data.firstName || ""} ${data.lastName || ""}`.trim() || data.username;
+      return {
+        name: { [state.language]: fullName },
+        email: data.email,
+        phone: data.phone || "",
+        role: data.role,
+        joiningData: state.selectedDate,
+        image: state.imageUrl,
+        ...(data.password ? { password: data.password } : {}),
+      };
     },
-    credentials: data.password ? [{
-      type: "password",
-      value: data.password,
-      temporary: false
-    }] : [],
-  });
+    [state.language, state.selectedDate, state.imageUrl]
+  );
 
-  const handleUser = useCallback(async (userId, data, token) => {
-    return userId
-      ? await UserService.updateUser(userId, data, token)
-      : (await UserService.createUser(data, token)).data?.id;
-  }, []);
+  const onSubmit = useCallback(
+    async (data) => {
+      try {
+        setState((s) => ({ ...s, isSubmitting: true }));
+        const payload = buildStaffPayload(data);
 
-  const onSubmit = useCallback(async (data) => {
-    try {
-      setState(s => ({ ...s, isSubmitting: true }));
-      const token = AuthService.getAccessToken();
-      const userData = buildUserData(data);
-      const userId = await handleUser(id, userData, token);
-      if (userId && data.role) {
-        await UserService.assignUserRole(userId, data.role, token); // 🔥 Service unifié
+        const response = id
+          ? await AdminServices.updateStaff(id, payload)
+          : await AdminServices.addStaff(payload);
+
+        const staff = response.data?.staff || response.data;
+        const mappedUser = UserService.mapAdminToUser(staff);
+
+        notifySuccess(id ? "Staff updated successfully" : "Staff created successfully");
+        return { success: true, user: mappedUser };
+      } catch (err) {
+        notifyError(err?.response?.data?.message || err?.message || "Error occurred");
+        throw err;
+      } finally {
+        setState((s) => ({ ...s, isSubmitting: false }));
       }
-      // Récupérer les données complètes de l'utilisateur
-      const { data: completeUser } = await UserService.getUserById(userId, token);
-
-      notifySuccess(id ? "User updated" : "User created");
-      
-      return { success: true, user: completeUser };
-    } catch (err) {
-      notifyError(err?.response?.data?.message || err?.message || "Error occurred");
-    } finally {
-      setState(s => ({ ...s, isSubmitting: false }));
-    }
-  }, [id, state.language, state.imageUrl, state.selectedDate, handleUser]);
+    },
+    [id, buildStaffPayload]
+  );
 
   const fetchUser = useCallback(async () => {
-    if (!id) return;
+    if (!id) {
+      setState((s) => ({ ...s, resData: {} }));
+      return;
+    }
     try {
-      const token = AuthService.getAccessToken();
-      const { data: user } = await UserService.getUserById(id, token);
-      setState(s => ({ ...s, resData: user, selectedDate: dayjs(user.joiningDate).format("YYYY-MM-DD") }));
-      ["firstName", "lastName", "email", "phone", "username"].forEach(field => setValue(field, user[field] || ""));
-      setValue("role", user.roles?.[0] || "");
+      const { data: user } = await UserService.getUserById(id);
+      setState((s) => ({
+        ...s,
+        resData: user,
+        selectedDate: dayjs(user.joiningDate || Date.now()).format("YYYY-MM-DD"),
+        imageUrl: user.image || "",
+      }));
+      ["firstName", "lastName", "email", "phone", "username"].forEach((field) =>
+        setValue(field, user[field] || "")
+      );
+      setValue("role", user.roles?.[0] || user.role || "");
     } catch (err) {
       notifyError(err?.response?.data?.message || err?.message);
     }
   }, [id, setValue]);
 
-  useEffect(() => { fetchUser(); }, [fetchUser]);
+  useEffect(() => {
+    fetchUser();
+  }, [fetchUser]);
 
   return {
     register,
     handleSubmit,
     onSubmit,
     errors,
-    setImageUrl: (url) => setState(s => ({ ...s, imageUrl: url })),
-    setSelectedDate: (date) => setState(s => ({ ...s, selectedDate: date })),
-    setLanguage: (lang) => setState(s => ({ ...s, language: lang })),
+    setImageUrl: (url) => setState((s) => ({ ...s, imageUrl: url })),
+    setSelectedDate: (date) => setState((s) => ({ ...s, selectedDate: date })),
+    setLanguage: (lang) => setState((s) => ({ ...s, language: lang })),
     ...state,
   };
 };

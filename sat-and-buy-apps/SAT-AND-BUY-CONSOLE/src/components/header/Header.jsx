@@ -31,7 +31,8 @@ const Header = () => {
   const { toggleSidebar, handleLanguageChange, setNavBar, navBar } = useContext(SidebarContext);
   const reduxDispatch = useDispatch();
 
-  const authData = AuthService.getAuthData();
+  const authSession = AuthService.getAuthData();
+  const authData = authSession?.user || authSession || {};
   const { mode, toggleMode } = useContext(WindmillContext);
   const pRef = useRef();
   const nRef = useRef();
@@ -370,7 +371,11 @@ const Header = () => {
                     aria-hidden="true"
                   />
                 ) : (
-                  <span>{authData.email[0]?.toUpperCase()}</span>
+                  <span>
+                    {authData.email?.[0]?.toUpperCase() ||
+                      authData.name?.toString()?.[0]?.toUpperCase() ||
+                      "?"}
+                  </span>
                 )}
               </button>
 

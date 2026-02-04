@@ -6,6 +6,13 @@ const jwt = require("jsonwebtoken");
 const { signInToken, tokenForVerify, sendEmail } = require("../config/auth");
 const Admin = require("../models/Admin");
 
+const sanitizeAdmin = (admin) => {
+  if (!admin) return admin;
+  const plain = admin.toObject ? admin.toObject() : { ...admin };
+  delete plain.password;
+  return plain;
+};
+
 const registerAdmin = async (req, res) => {
   try {
     const isAdded = await Admin.findOne({ email: req.body.email });
@@ -136,9 +143,10 @@ const addStaff = async (req, res) => {
         role: req.body.role,
         image: req.body.image,
       });
-      await newStaff.save();
-      res.status(200).send({
+      const savedStaff = await newStaff.save();
+      res.status(201).send({
         message: "Staff Added Successfully!",
+        staff: sanitizeAdmin(savedStaff),
       });
     }
   } catch (err) {
@@ -153,7 +161,7 @@ const getAllStaff = async (req, res) => {
   // console.log('allamdin')
   try {
     const admins = await Admin.find({}).sort({ _id: -1 });
-    res.send(admins);
+    res.send(admins.map(sanitizeAdmin));
   } catch (err) {
     res.status(500).send({
       message: err.message,
@@ -164,7 +172,7 @@ const getAllStaff = async (req, res) => {
 const getStaffById = async (req, res) => {
   try {
     const admin = await Admin.findById(req.params.id);
-    res.send(admin);
+    res.send(sanitizeAdmin(admin));
   } catch (err) {
     res.status(500).send({
       message: err.message,
@@ -193,11 +201,7 @@ const updateStaff = async (req, res) => {
       res.send({
         token,
         message: "Staff Updated Successfully!",
-        _id: updatedAdmin._id,
-        name: updatedAdmin.name,
-        email: updatedAdmin.email,
-        role: updatedAdmin.role,
-        image: updatedAdmin.image,
+        staff: sanitizeAdmin(updatedAdmin),
       });
     } else {
       res.status(404).send({
@@ -237,8 +241,10 @@ const updatedStatus = async (req, res) => {
         },
       }
     );
+    const staff = await Admin.findById(req.params.id);
     res.send({
       message: `Staff ${newStatus} Successfully!`,
+      staff: sanitizeAdmin(staff),
     });
   } catch (err) {
     res.status(500).send({

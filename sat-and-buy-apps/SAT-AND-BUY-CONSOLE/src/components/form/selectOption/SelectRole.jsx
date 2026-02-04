@@ -10,7 +10,7 @@ const SelectRole = ({ setRole, register, name, label, options = [], defaultValue
     <Select
       name={name}
       defaultValue={defaultValue || ""}
-      onChange={(e) => setRole(e.target.value)}
+      onChange={(e) => setRole?.(e.target.value)}
       {...register(name, {
         required: `${label} is required!`,
       })}

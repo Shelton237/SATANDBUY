@@ -33,6 +33,7 @@ router.post("/add", addStaff);
 router.get("/", getAllStaff);
 
 //get a staff
+router.get("/:id", getStaffById);
 router.post("/:id", getStaffById);
 
 //update a staff

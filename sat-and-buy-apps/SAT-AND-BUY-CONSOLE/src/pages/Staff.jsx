@@ -11,7 +11,7 @@ import {
   TableFooter,
   TableHeader,
 } from "@windmill/react-ui";
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useContext, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FiPlus } from "react-icons/fi";
 
@@ -24,62 +24,37 @@ import TableLoading from "@/components/preloader/TableLoading";
 import StaffTable from "@/components/staff/StaffTable";
 import NotFound from "@/components/table/NotFound";
 import PageTitle from "@/components/Typography/PageTitle";
-import { AdminContext } from "@/context/AdminContext";
 import { SidebarContext } from "@/context/SidebarContext";
 import UserService from "@/services/UserService";
-import AuthService from "@/services/AuthService";
 import AnimatedContent from "@/components/common/AnimatedContent";
 
 const Staff = () => {
   const { t } = useTranslation();
-  const authData = AuthService.getAuthData();
-  const { toggleDrawer, lang } = useContext(SidebarContext);
+  const { toggleDrawer, lang, setIsUpdate, serviceId } = useContext(SidebarContext);
 
-  const [users, setUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
 
   const { roles, loading: rolesLoading, error: rolesError } = useStaffRoles();
 
   const fetchUsers = useCallback(async () => {
-    if (!authData) return [];
-    const accessToken = AuthService.getAccessToken();
-    const users = await UserService.getAllUsers(accessToken);
+    const users = await UserService.getAllUsers();
     return users.map(user => ({
       ...user,
       phone: user.phone || null,
-      image: null,
+      image: user.image || null,
     }));
-  }, [authData]);
-
-  // Chargement initial et mise Ã  jour quand authData change
-  useEffect(() => {
-    const loadUsers = async () => {
-      try {
-        const usersData = await fetchUsers();
-        setUsers(usersData);
-      } catch (err) {
-        console.error("Error loading users:", err);
-      }
-    };
-    loadUsers();
-  }, [fetchUsers]);
+  }, []);
 
   const { data, loading, error } = useAsync(fetchUsers);
 
-  // Fonction pour ajouter un nouvel utilisateur Ã  la liste
-  const handleUserAdded = useCallback((newUser) => {
-    setUsers(prevUsers => [...prevUsers, newUser]);
-  }, []);
+  const handleUserAdded = useCallback(() => {
+    setIsUpdate(true);
+  }, [setIsUpdate]);
 
-  // Fonction pour mettre Ã  jour un utilisateur existant
-  const handleUserUpdated = useCallback((updatedUser) => {
-    setUsers(prevUsers =>
-      prevUsers.map(user =>
-        user.id === updatedUser.id ? updatedUser : user
-      )
-    );
-  }, []);
+  const handleUserUpdated = useCallback(() => {
+    setIsUpdate(true);
+  }, [setIsUpdate]);
 
   const filteredUsers = useMemo(() => {
     if (!data) return [];
@@ -147,16 +122,18 @@ const Staff = () => {
       <MainDrawer>
         {rolesLoading ? (
           <div className="p-4 text-center">
-            <p>Chargement des rÃ´les...</p>
+            <p>Chargement des rôles...</p>
           </div>
         ) : roles.length > 0 ? (
-          <StaffDrawer roles={roles}
+          <StaffDrawer
+            roles={roles}
+            staffId={serviceId}
             onUserAdded={handleUserAdded}
             onUserUpdated={handleUserUpdated}
           />
         ) : (
           <div className="p-4 text-center text-red-500">
-            <p>Aucun rÃ´le rÃ©cupÃ©rÃ©</p>
+            <p>Aucun rôle récupéré</p>
           </div>
         )}
       </MainDrawer>
@@ -210,3 +187,5 @@ const Staff = () => {
 };
 
 export default Staff;
+
+
