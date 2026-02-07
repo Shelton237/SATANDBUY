@@ -1,0 +1,96 @@
+
+services:
+  mongo:
+    image: mongo:6.0
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: satandbuy_db
+    networks:
+      - satandbuy
+
+  backend:
+    build:
+      context: ./SAT-AND-BUY-BACKEND
+    restart: unless-stopped
+    env_file:
+      - env/backend.prod.env
+    depends_on:
+      - mongo
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend-http.rule=Host(`back-satbuy.dreamdigital.cm`)"
+      - "traefik.http.routers.backend-http.entrypoints=web"
+      - "traefik.http.routers.backend-http.middlewares=https-redirect@file"
+      - "traefik.http.routers.backend.rule=Host(`back-satbuy.dreamdigital.cm`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.backend.loadbalancer.server.port=5000"
+    networks:
+      - satandbuy
+      - proxy
+
+  console:
+    build:
+      context: ./SAT-AND-BUY-CONSOLE
+    restart: unless-stopped
+    env_file:
+      - env/console.prod.env
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.console-http.rule=Host(`console.dreamdigital.cm`)"
+      - "traefik.http.routers.console-http.entrypoints=web"
+      - "traefik.http.routers.console-http.middlewares=https-redirect@file"
+      - "traefik.http.routers.console.rule=Host(`console.dreamdigital.cm`)"
+      - "traefik.http.routers.console.entrypoints=websecure"
+      - "traefik.http.routers.console.tls.certresolver=letsencrypt"
+      - "traefik.http.services.console.loadbalancer.server.port=4000"
+    networks:
+      - satandbuy
+      - proxy
+
+  store:
+    build:
+      context: ./SAT-AND-BUY-STORE
+    restart: unless-stopped
+    env_file:
+      - env/store.prod.env
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.store-http.rule=Host(`satandbuy.dreamdigital.cm`)"
+      - "traefik.http.routers.store-http.entrypoints=web"
+      - "traefik.http.routers.store-http.middlewares=https-redirect@file"
+      - "traefik.http.routers.store.rule=Host(`satandbuy.dreamdigital.cm`)"
+      - "traefik.http.routers.store.entrypoints=websecure"
+      - "traefik.http.routers.store.tls.certresolver=letsencrypt"
+      - "traefik.http.services.store.loadbalancer.server.port=3000"
+    networks:
+      - satandbuy
+      - proxy
+
+  traefik:
+    image: traefik:v3.0
+    restart: unless-stopped
+    command:
+      - "--configFile=/etc/traefik/traefik.yml"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+      - ./traefik/acme.json:/letsencrypt/acme.json
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - proxy
+      - satandbuy
+
+networks:
+  proxy:
+    driver: bridge
+  satandbuy:
+    driver: bridge
+
+volumes:
+  mongo-data:
