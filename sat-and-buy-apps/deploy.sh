@@ -1,31 +1,28 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Script simple to deploy the latest main branch on the production server.
-REMOTE="root@38.242.216.23"
-REMOTE_DIR="/root/sat-and-buy-apps"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="https://github.com/Shelton237/SATANDBUY.git"
 
-echo "Synchronising ${REPO} on ${REMOTE}:${REMOTE_DIR}"
+echo "Déploiement local du dépôt ${REPO} dans ${ROOT_DIR}"
 
-ssh "${REMOTE}" <<EOF
-set -euo pipefail
-
-if [ ! -d "${REMOTE_DIR}/.git" ]; then
-  echo "Cloning repository into ${REMOTE_DIR}"
-  git clone "${REPO}" "${REMOTE_DIR}"
+if [ ! -d "${ROOT_DIR}/.git" ]; then
+  echo "Le dépôt n'existe pas localement, clonage en cours..."
+  git clone "${REPO}" "${ROOT_DIR}"
 fi
 
-cd "${REMOTE_DIR}"
-echo "Ensuring working tree matches origin/main"
+cd "${ROOT_DIR}"
+echo "Mise à jour sur origin/main"
 git fetch origin --prune
 git reset --hard origin/main
 git clean -fd
+
+mkdir -p traefik
+touch traefik/acme.json
 chmod 600 traefik/acme.json
 
-echo "Building and starting the compose stack"
+echo "Reconstruction de la stack Docker Compose"
 docker compose down --remove-orphans
 docker compose up -d --build
-EOF
 
-echo "Déploiement terminé : vérifie les logs Traefik ou les endpoints HTTPS."
+echo "Déploiement terminé : surveiller les logs Traefik et vérifier les domaines."
