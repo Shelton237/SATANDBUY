@@ -4,6 +4,10 @@ FROM node:18
 
 # Définit le répertoire de travail
 WORKDIR /app
+ENV NEXT_PUBLIC_API_BASE_URL=https://back-satbuy.dreamdigital.cm/api
+ENV NEXT_PUBLIC_API_SOCKET_URL=https://back-satbuy.dreamdigital.cm
+ENV NEXT_PUBLIC_STORE_DOMAIN=https://satandbuy.dreamdigital.cm
+ENV NEXTAUTH_URL=https://satandbuy.dreamdigital.cm
 
 # Copie des fichiers de dépendances
 COPY package*.json ./
