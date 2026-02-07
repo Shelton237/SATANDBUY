@@ -1,31 +1,37 @@
-# Fichier : SAT-AND-BUY-STORE/Dockerfile
+# File: SAT-AND-BUY-STORE/Dockerfile
 
 FROM node:18
 
-# Définit le répertoire de travail
+# Set working directory
 WORKDIR /app
-ENV NEXT_PUBLIC_API_BASE_URL=https://back-satbuy.dreamdigital.cm/api
-ENV NEXT_PUBLIC_API_SOCKET_URL=https://back-satbuy.dreamdigital.cm
-ENV NEXT_PUBLIC_STORE_DOMAIN=https://satandbuy.dreamdigital.cm
-ENV NEXTAUTH_URL=https://satandbuy.dreamdigital.cm
 
-# Copie des fichiers de dépendances
+ARG NEXT_PUBLIC_API_BASE_URL=https://back-satbuy.dreamdigital.cm/api
+ARG NEXT_PUBLIC_API_SOCKET_URL=https://back-satbuy.dreamdigital.cm
+ARG NEXT_PUBLIC_STORE_DOMAIN=https://satandbuy.dreamdigital.cm
+ARG NEXTAUTH_URL=https://satandbuy.dreamdigital.cm
+
+ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
+ENV NEXT_PUBLIC_API_SOCKET_URL=${NEXT_PUBLIC_API_SOCKET_URL}
+ENV NEXT_PUBLIC_STORE_DOMAIN=${NEXT_PUBLIC_STORE_DOMAIN}
+ENV NEXTAUTH_URL=${NEXTAUTH_URL}
+
+# Copy dependency files first to leverage layer caching
 COPY package*.json ./
 
-# Installe toutes les dépendances, y compris les devDependencies
+# Install dependencies
 RUN npm install
 
-# Copie du code source
+# Copy source code
 COPY . .
 
-# Génère le build optimisé pour la production
+# Build optimized production bundle
 RUN npm run build
 
-# Expose le port utilisé par l'application Next.js
+# Expose HTTP port
 EXPOSE 3000
 
-# Définit un utilisateur non-root pour la sécurité
+# Security: run as non-root user
 USER node
 
-# Démarre Next.js en mode production
+# Start Next.js in production
 CMD ["npm", "run", "start"]

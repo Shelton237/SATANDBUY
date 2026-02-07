@@ -53,6 +53,11 @@ services:
   store:
     build:
       context: ./SAT-AND-BUY-STORE
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${STORE_BUILD_API_BASE_URL:-https://back-satbuy.dreamdigital.cm/api}
+        NEXT_PUBLIC_API_SOCKET_URL: ${STORE_BUILD_API_SOCKET_URL:-https://back-satbuy.dreamdigital.cm}
+        NEXT_PUBLIC_STORE_DOMAIN: ${STORE_BUILD_STORE_DOMAIN:-https://satandbuy.dreamdigital.cm}
+        NEXTAUTH_URL: ${STORE_BUILD_NEXTAUTH_URL:-https://satandbuy.dreamdigital.cm}
     restart: unless-stopped
     env_file:
       - env/store.prod.env
