@@ -2,9 +2,18 @@
 import React from "react";
 import { Select } from "@windmill/react-ui";
 import { useTranslation } from "react-i18next";
+import { STAFF_ROLES } from "@/constants/roles";
 
-const SelectRole = ({ setRole, register, name, label, options = [], defaultValue }) => {
+const SelectRole = ({
+  setRole,
+  register,
+  name,
+  label,
+  options = [],
+  defaultValue,
+}) => {
   const { t } = useTranslation();
+  const availableOptions = options.length ? options : STAFF_ROLES;
 
   return (
     <Select
@@ -18,7 +27,7 @@ const SelectRole = ({ setRole, register, name, label, options = [], defaultValue
       <option value="" hidden>
         {t("DrawerStaffRole")}
       </option>
-      {options.map((role) => (
+      {availableOptions.map((role) => (
         <option key={role.value} value={role.value}>
           {role.label}
         </option>

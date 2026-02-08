@@ -10,6 +10,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "data:import": "node script/seed.js",
     "product": "node script/product.js",
+    "seed:vendor": "node script/seedVendorCatalog.js",
     "generate-password": "node script/script.js"
   },
   "author": "Kachabazar",

@@ -98,7 +98,6 @@ const Login = () => {
                   or={true}
                   route={"/auth/signup"}
                   pageName={"Sign Up"}
-                  loginTitle="Login"
                 />
               </div>
             </div>

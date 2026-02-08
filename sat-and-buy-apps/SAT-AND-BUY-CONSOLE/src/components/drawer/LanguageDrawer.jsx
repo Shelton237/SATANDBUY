@@ -15,6 +15,8 @@ import DrawerButton from "@/components/form/button/DrawerButton";
 
 //internal import
 
+const FLAG_OPTIONS = ["US", "FR"];
+
 const LanguageDrawer = ({ id }) => {
   const {
     onSubmit,
@@ -78,7 +80,9 @@ const LanguageDrawer = ({ id }) => {
               <LabelArea label={t("AddLanguagesFlag")} />
               <div className="col-span-8 sm:col-span-4">
                 <ReactFlagsSelect
+                  countries={FLAG_OPTIONS}
                   selected={flagAndName}
+                  customLabels={{ US: "English", FR: "Français" }}
                   onSelect={(code) => setFlagAndName(code)}
                 />
               </div>

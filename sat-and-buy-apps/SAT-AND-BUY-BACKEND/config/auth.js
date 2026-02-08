@@ -1,6 +1,14 @@
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const Admin = require("../models/Admin");
+const { CLIENT_ROLE } = require("../constants/roles");
+
+const resolveRole = (user) => {
+  if (user && user.role) {
+    return user.role;
+  }
+  return CLIENT_ROLE;
+};
 
 const signInToken = (user) => {
   return jwt.sign(
@@ -11,6 +19,7 @@ const signInToken = (user) => {
       address: user.address,
       phone: user.phone,
       image: user.image,
+      role: resolveRole(user),
     },
     process.env.JWT_SECRET,
     {

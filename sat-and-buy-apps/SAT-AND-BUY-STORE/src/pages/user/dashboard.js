@@ -1,4 +1,3 @@
-import Cookies from "js-cookie";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -6,6 +5,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { IoLockOpenOutline } from "react-icons/io5";
 import {
   FiCheck,
+  FiClipboard,
   FiFileText,
   FiGrid,
   FiHome,
@@ -16,7 +16,6 @@ import {
   FiTruck,
   FiUser,
 } from "react-icons/fi";
-import { signOut } from "next-auth/react";
 
 //internal import
 import Layout from "@layout/Layout";
@@ -24,6 +23,9 @@ import Card from "@components/order-card/Card";
 import OrderServices from "@services/OrderServices";
 import RecentOrder from "@pages/user/recent-order";
 import { SidebarContext } from "@context/SidebarContext";
+import { UserContext } from "@context/UserContext";
+import { clearUserSession } from "@lib/auth";
+import Cookies from "js-cookie";
 import Loading from "@components/preloader/Loading";
 import useGetSetting from "@hooks/useGetSetting";
 import useUtilsFunction from "@hooks/useUtilsFunction";
@@ -31,6 +33,7 @@ import useUtilsFunction from "@hooks/useUtilsFunction";
 const Dashboard = ({ title, description, children }) => {
   const router = useRouter();
   const { isLoading, setIsLoading, currentPage } = useContext(SidebarContext);
+  const { dispatch } = useContext(UserContext);
 
   const { storeCustomizationSetting } = useGetSetting();
   const { showingTranslateValue } = useUtilsFunction();
@@ -68,10 +71,19 @@ const Dashboard = ({ title, description, children }) => {
     };
   }, [currentPage]);
 
-  const handleLogOut = () => {
-    signOut();
+  const redirectToHome = () => {
+    const navigation = router.replace("/", undefined, { scroll: true });
+    Promise.resolve(navigation).catch((err) => {
+      if (err?.cancelled) return;
+      window.location.assign("/");
+    });
+  };
+
+  const handleLogOut = async () => {
+    clearUserSession();
+    dispatch({ type: "USER_LOGOUT" });
     Cookies.remove("couponInfo");
-    router.push("/");
+    await redirectToHome();
   };
 
   useEffect(() => {
@@ -95,9 +107,22 @@ const Dashboard = ({ title, description, children }) => {
       icon: FiList,
     },
     {
+      title:
+        showingTranslateValue(
+          storeCustomizationSetting?.dashboard?.order_tracking
+        ) || "Order Tracking",
+      href: "/user/order-tracking",
+      icon: FiTruck,
+    },
+    {
       title: "My Account",
       href: "/user/my-account",
       icon: FiUser,
+    },
+    {
+      title: "Liste de marché",
+      href: "/user/market-list",
+      icon: FiClipboard,
     },
 
     {

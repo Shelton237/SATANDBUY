@@ -1,16 +1,10 @@
 import dayjs from "dayjs";
 import { useParams } from "react-router";
 import ReactToPrint from "react-to-print";
-import React, { useContext, useRef } from "react";
+import React, { useRef } from "react";
 import { FiPrinter } from "react-icons/fi";
 import { IoCloudDownloadOutline } from "react-icons/io5";
-import {
-  TableCell,
-  TableHeader,
-  Table,
-  TableContainer,
-  WindmillContext,
-} from "@windmill/react-ui";
+import { TableCell, TableHeader, Table, TableContainer } from "@windmill/react-ui";
 import { useTranslation } from "react-i18next";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 
@@ -20,15 +14,13 @@ import Status from "@/components/table/Status";
 import OrderServices from "@/services/OrderServices";
 import Invoice from "@/components/invoice/Invoice";
 import Loading from "@/components/preloader/Loading";
-import logoDark from "@/assets/img/logo/logo-dark.svg";
-import logoLight from "@/assets/img/logo/logo-color.svg";
+import satBuyLogo from "@/assets/img/logo/logo-text.png";
 import PageTitle from "@/components/Typography/PageTitle";
 import useUtilsFunction from "@/hooks/useUtilsFunction";
 import InvoiceForDownload from "@/components/invoice/InvoiceForDownload";
 
 const OrderInvoice = () => {
   const { t } = useTranslation();
-  const { mode } = useContext(WindmillContext);
   const { id } = useParams();
   const printRef = useRef();
 
@@ -67,11 +59,7 @@ const OrderInvoice = () => {
               </h1>
               <div className="lg:text-right text-left">
                 <h2 className="lg:flex lg:justify-end text-lg font-serif font-semibold mt-4 lg:mt-0 lg:ml-0 md:mt-0">
-                  {mode === "dark" ? (
-                    <img src={logoDark} alt="kachabazar" width="110" />
-                  ) : (
-                    <img src={logoLight} alt="kachabazar" width="110" />
-                  )}
+                  <img src={satBuyLogo} alt="Sat & Buy" width="150" />
                 </h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                   {globalSetting?.address} <br />

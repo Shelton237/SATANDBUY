@@ -1,17 +1,13 @@
 // hooks/useStaffRoles.js
 import { useEffect, useState } from "react";
 import AdminServices from "@/services/AdminServices";
+import { STAFF_ROLES } from "@/constants/roles";
 
-const DEFAULT_ROLES = [
-  "Admin",
-  "Super Admin",
-  "Cashier",
-  "Manager",
-  "CEO",
-  "Driver",
-  "Security Guard",
-  "Accountant"
-].map((name) => ({ id: name, name, description: name }));
+const DEFAULT_ROLES = STAFF_ROLES.map(({ value, label }) => ({
+  id: value,
+  name: value,
+  description: label,
+}));
 
 const useStaffRoles = () => {
   const [roles, setRoles] = useState(DEFAULT_ROLES);
@@ -24,15 +20,15 @@ const useStaffRoles = () => {
         const res = await AdminServices.getAllStaff();
         const staffList = res.data || [];
         const unique = [
-          ...new Set(
-            staffList
-              .map((staff) => staff.role)
-              .filter(Boolean)
-          )
+          ...new Set(staffList.map((staff) => staff.role).filter(Boolean)),
         ];
-        if (unique.length) {
-          setRoles(unique.map((name) => ({ id: name, name, description: name })));
-        }
+        const merged = [...DEFAULT_ROLES];
+        unique.forEach((name) => {
+          if (!merged.some((role) => role.name === name)) {
+            merged.push({ id: name, name, description: name });
+          }
+        });
+        setRoles(merged);
       } catch (err) {
         console.error("Error fetching roles:", err);
         setError("Failed to load roles");

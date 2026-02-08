@@ -1,5 +1,6 @@
-import { TableBody, TableCell, TableRow } from "@windmill/react-ui";
+import { Button, TableBody, TableCell, TableRow } from "@windmill/react-ui";
 
+import { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import { FiZoomIn } from "react-icons/fi";
 import { Link } from "react-router-dom";
@@ -11,11 +12,24 @@ import Tooltip from "@/components/tooltip/Tooltip";
 import useUtilsFunction from "@/hooks/useUtilsFunction";
 import PrintReceipt from "@/components/form/others/PrintReceipt";
 import SelectStatus from "@/components/form/selectOption/SelectStatus";
+import { SidebarContext } from "@/context/SidebarContext";
+import { AdminContext } from "@/context/AdminContext";
 
 const OrderTable = ({ orders }) => {
   // console.log('globalSetting',globalSetting)
   const { t } = useTranslation();
   const { showDateTimeFormat, currency, getNumberTwo } = useUtilsFunction();
+  const { toggleDrawer, setServiceId, setTitle } = useContext(SidebarContext);
+  const { authData } = useContext(AdminContext);
+  const role = authData?.user?.role;
+
+  const handleWorkflowDrawer = (orderId) => {
+    setServiceId(orderId);
+    setTitle("order-workflow");
+    toggleDrawer();
+  };
+
+  const canOrganize = role === "Trieur" || role === "Admin";
 
   // console.log('orders',orders)
 
@@ -59,6 +73,16 @@ const OrderTable = ({ orders }) => {
 
             <TableCell className="text-center">
               <SelectStatus id={order._id} order={order} />
+              {canOrganize && (
+                <Button
+                  onClick={() => handleWorkflowDrawer(order._id)}
+                  className="w-full h-8 text-xs mt-2"
+                >
+                  {order?.status === "ReadyForDelivery"
+                    ? t("PlanDelivery", "Planifier la livraison")
+                    : t("OrganizeSorting", "Organiser le tri")}
+                </Button>
+              )}
             </TableCell>
 
             <TableCell className="text-right flex justify-end">

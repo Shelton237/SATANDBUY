@@ -1,6 +1,13 @@
 const Attribute = require("../models/Attribute");
 const { handleProductAttribute } = require("../lib/stock-controller/others");
 
+const resolveAttributeLabel = (attribute = {}) =>
+  attribute?.title?.fr ||
+  attribute?.title?.en ||
+  attribute?.name?.fr ||
+  attribute?.name?.en ||
+  attribute?._id?.toString();
+
 const addAttribute = async (req, res) => {
   try {
     const newAttribute = new Attribute(req.body);
@@ -49,10 +56,34 @@ const addAllAttributes = async (req, res) => {
 
 const getAllAttributes = async (req, res) => {
   try {
-    const { type, option, option1 } = req.query;
-    const attributes = await Attribute.find({
-      $or: [{ type: type }, { $or: [{ option: option }, { option: option1 }] }],
-    });
+    const { type, option, option1, status } = req.query;
+
+    const orFilters = [];
+
+    if (type) {
+      orFilters.push({ type });
+    }
+
+    const optionFilters = [option, option1].filter((value) => !!value);
+    if (optionFilters.length === 1) {
+      orFilters.push({ option: optionFilters[0] });
+    } else if (optionFilters.length > 1) {
+      orFilters.push({ option: { $in: optionFilters } });
+    }
+
+    let query = {};
+
+    if (orFilters.length > 1) {
+      query.$or = orFilters;
+    } else if (orFilters.length === 1) {
+      query = { ...orFilters[0] };
+    }
+
+    if (status) {
+      query.status = status;
+    }
+
+    const attributes = await Attribute.find(query);
     res.send(attributes);
   } catch (err) {
     res.status(500).send({
@@ -172,16 +203,27 @@ const getChildAttributeById = async (req, res) => {
 const updateAttributes = async (req, res) => {
   try {
     const attribute = await Attribute.findById(req.params.id);
-    if (attribute) {
-      attribute.title = { ...attribute.title, ...req.body.title };
-      attribute.name = { ...attribute.name, ...req.body.name };
-      attribute._id = req.params.id;
-      //attribute.title = req.body.title;
-      // attribute.name = req.body.name;
-      attribute.option = req.body.option;
-      attribute.type = req.body.type;
-      // attribute.variants = req.body.variants;
+
+    if (!attribute) {
+      return res.status(404).send({
+        message: "Attribute not found",
+      });
     }
+
+    if (Array.isArray(attribute.variants) && attribute.variants.length > 0) {
+      return res.status(400).send({
+        message: `Impossible de modifier l'attribut "${resolveAttributeLabel(
+          attribute
+        )}" car il possède déjà des valeurs.`,
+      });
+    }
+
+    attribute.title = { ...attribute.title, ...req.body.title };
+    attribute.name = { ...attribute.name, ...req.body.name };
+    attribute._id = req.params.id;
+    attribute.option = req.body.option;
+    attribute.type = req.body.type;
+
     await attribute.save();
     res.send({
       message: "Attribute updated successfully!",
@@ -211,15 +253,32 @@ const updateChildAttributes = async (req, res) => {
         ...req.body.name,
       };
 
-      await Attribute.updateOne(
-        { _id: attributeId, "variants._id": childId },
-        {
-          $set: {
-            "variants.$.name": name,
-            "variants.$.status": req.body.status,
-          },
+        const updatePayload = {
+          "variants.$.name": name,
+        };
+
+        if (typeof req.body.status !== "undefined") {
+          updatePayload["variants.$.status"] = req.body.status;
         }
-      );
+
+        if (typeof req.body.hexCode !== "undefined") {
+          updatePayload["variants.$.hexCode"] = req.body.hexCode;
+        }
+
+        if (typeof req.body.description !== "undefined") {
+          updatePayload["variants.$.description"] = req.body.description;
+        }
+
+        if (typeof req.body.logoUrl !== "undefined") {
+          updatePayload["variants.$.logoUrl"] = req.body.logoUrl;
+        }
+
+        await Attribute.updateOne(
+          { _id: attributeId, "variants._id": childId },
+          {
+            $set: updatePayload,
+          }
+        );
     }
 
     res.send({
@@ -349,6 +408,22 @@ const updateChildStatus = async (req, res) => {
 
 const deleteAttribute = async (req, res) => {
   try {
+    const attribute = await Attribute.findById(req.params.id);
+
+    if (!attribute) {
+      return res.status(404).send({
+        message: "Attribute not found",
+      });
+    }
+
+    if (Array.isArray(attribute.variants) && attribute.variants.length > 0) {
+      return res.status(400).send({
+        message: `Impossible de supprimer l'attribut "${resolveAttributeLabel(
+          attribute
+        )}" car il possède encore des valeurs.`,
+      });
+    }
+
     await Attribute.deleteOne({ _id: req.params.id });
     res.send({
       message: "Attribute Deleted Successfully!",
@@ -382,6 +457,18 @@ const deleteChildAttribute = async (req, res) => {
 
 const deleteManyAttribute = async (req, res) => {
   try {
+    const attributes = await Attribute.find({ _id: req.body.ids });
+    const blocked = attributes.filter(
+      (attr) => Array.isArray(attr.variants) && attr.variants.length > 0
+    );
+
+    if (blocked.length > 0) {
+      const titles = blocked.map(resolveAttributeLabel).join(", ");
+      return res.status(400).send({
+        message: `Impossible de supprimer les attributs suivants car ils possèdent encore des valeurs: ${titles}`,
+      });
+    }
+
     await Attribute.deleteMany({ _id: req.body.ids });
     // console.log('delete many attribute');
     res.send({

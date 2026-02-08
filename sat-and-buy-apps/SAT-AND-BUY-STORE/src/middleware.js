@@ -1,23 +1,29 @@
-import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
+import { CLIENT_ROLE } from "./constants/roles";
 
-// This function can be marked `async` if using `await` inside
-export async function middleware(request) {
-  const userInfo = await getToken({
-    req: request,
-    // NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
-  });
+const USER_COOKIE = "userInfo";
 
-  // console.log(
-  //   "middleware ran>>>>]]]",
-  //   request.nextUrl.pathname,
+const parseUserFromRequest = (request) => {
+  const raw = request.cookies.get(USER_COOKIE)?.value;
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch (err) {
+    return null;
+  }
+};
 
-  //   "userInfo",
-  //   userInfo?.email
-  // );
+export function middleware(request) {
+  const userInfo = parseUserFromRequest(request);
+  const hasValidRole =
+    !userInfo?.role || userInfo.role === CLIENT_ROLE;
 
-  if (!userInfo) {
-    return NextResponse.redirect(new URL(`/auth/login`, request.url));
+  if (!userInfo?.token || !hasValidRole) {
+    const loginUrl = new URL(`/auth/login`, request.url);
+    if (request.nextUrl.pathname) {
+      loginUrl.searchParams.set("redirectUrl", request.nextUrl.pathname);
+    }
+    return NextResponse.redirect(loginUrl);
   }
 
   return NextResponse.next();

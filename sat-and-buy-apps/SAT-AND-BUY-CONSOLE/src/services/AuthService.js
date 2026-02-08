@@ -1,5 +1,6 @@
 import HttpService from "@/services/httpService";
 import store from "@/reduxStore/store";
+import { STAFF_ROLE_VALUES } from "@/constants/roles";
 
 const API_BASE_URL = import.meta.env.VITE_APP_API_BASE_URL;
 const TOKEN_TTL_SECONDS = 24 * 60 * 60; // Backend JWT expires in 1 day
@@ -7,6 +8,8 @@ const TOKEN_TTL_SECONDS = 24 * 60 * 60; // Backend JWT expires in 1 day
 const http = new HttpService(API_BASE_URL, {
   "Content-Type": "application/json"
 });
+
+const isRoleAllowed = (role) => STAFF_ROLE_VALUES.includes(role);
 
 const mapAdminPayload = (data = {}) => {
   const name =
@@ -28,6 +31,11 @@ class AuthService {
   static async login(email, password) {
     const { data } = await http.post("/admin/login", { email, password });
     const user = mapAdminPayload(data);
+    if (!isRoleAllowed(user.role)) {
+      throw new Error(
+        "Ce compte n'est pas autorise a acceder a la console. Connectez-vous sur la boutique."
+      );
+    }
     const authData = {
       user,
       token: data.token,
@@ -86,7 +94,13 @@ class AuthService {
   static isAuthenticated() {
     const authData = this.getAuthData();
     console.log("AuthService isAuthenticated check:", authData);
-    return authData?.timestamp + authData?.expiresIn * 1000 > Date.now();
+    const isSessionValid =
+      authData?.timestamp + authData?.expiresIn * 1000 > Date.now();
+    if (!isSessionValid || !isRoleAllowed(authData?.user?.role)) {
+      this.clearAuth();
+      return false;
+    }
+    return true;
   }
 
   static getAccessToken() {

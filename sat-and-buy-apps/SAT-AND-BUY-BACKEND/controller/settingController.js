@@ -1,11 +1,64 @@
 //models
 const Setting = require("../models/Setting");
 
+const cloneDefaults = (defaults = {}) =>
+  JSON.parse(JSON.stringify(defaults || {}));
+
+const DEFAULT_GLOBAL_SETTING = {
+  shop_name: "",
+  company_name: "",
+  address: "",
+  vat_number: "",
+  post_code: "",
+  contact: "",
+  email: "",
+  website: "",
+  receipt_size: "",
+  default_currency: "FCFA",
+  default_time_zone: "Africa/Douala",
+  default_date_format: "DD/MM/YYYY",
+  number_of_image_per_product: 5,
+  floating_number: 2,
+};
+
+const DEFAULT_STORE_SETTING = {};
+
+const DEFAULT_STORE_CUSTOMIZATION_SETTING = {
+  navbar: {},
+  home: {},
+  checkout: {},
+  slider: {},
+  seo: {},
+};
+
+const ensureSettingDocument = async (name, defaults = {}) => {
+  let doc = await Setting.findOne({ name });
+  if (!doc) {
+    doc = new Setting({
+      name,
+      setting: cloneDefaults(defaults),
+    });
+    await doc.save();
+  } else if (!doc.setting) {
+    doc.setting = cloneDefaults(defaults);
+    await doc.save();
+  }
+  return doc;
+};
+
 //global setting controller
 const addGlobalSetting = async (req, res) => {
   try {
-    const newGlobalSetting = new Setting(req.body);
-    await newGlobalSetting.save();
+    const payload = {
+      ...req.body,
+      name: "globalSetting",
+    };
+
+    await Setting.findOneAndUpdate(
+      { name: "globalSetting" },
+      { $set: { setting: payload.setting || req.body.setting || req.body } },
+      { upsert: true }
+    );
     res.send({
       message: "Global Setting Added Successfully!",
     });
@@ -18,8 +71,11 @@ const addGlobalSetting = async (req, res) => {
 
 const getGlobalSetting = async (req, res) => {
   try {
-    const globalSetting = await Setting.findOne({ name: "globalSetting" });
-    res.send(globalSetting.setting);
+    const globalSetting = await ensureSettingDocument(
+      "globalSetting",
+      DEFAULT_GLOBAL_SETTING
+    );
+    res.send(globalSetting.setting || DEFAULT_GLOBAL_SETTING);
   } catch (err) {
     res.status(500).send({
       message: err.message,
@@ -29,53 +85,58 @@ const getGlobalSetting = async (req, res) => {
 
 const updateGlobalSetting = async (req, res) => {
   try {
-    const globalSetting = await Setting.updateOne(
+    const bodySetting = req.body.setting || req.body;
+    const globalSetting = await Setting.findOneAndUpdate(
       {
         name: "globalSetting",
       },
       {
         $set: {
           "setting.number_of_image_per_product":
-            req.body.setting.number_of_image_per_product,
-          "setting.shop_name": req.body.setting.shop_name,
-          "setting.company_name": req.body.setting.company_name,
-          "setting.address": req.body.setting.address,
-          "setting.vat_number": req.body.setting.vat_number,
-          "setting.post_code": req.body.setting.post_code,
-          "setting.contact": req.body.setting.contact,
-          "setting.email": req.body.setting.email,
-          "setting.website": req.body.setting.website,
-          "setting.receipt_size": req.body.setting.receipt_size,
-          "setting.default_currency": req.body.setting.default_currency,
-          "setting.default_time_zone": req.body.setting.default_time_zone,
-          "setting.default_date_format": req.body.setting.default_date_format,
+            bodySetting.number_of_image_per_product,
+          "setting.shop_name": bodySetting.shop_name,
+          "setting.company_name": bodySetting.company_name,
+          "setting.address": bodySetting.address,
+          "setting.vat_number": bodySetting.vat_number,
+          "setting.post_code": bodySetting.post_code,
+          "setting.contact": bodySetting.contact,
+          "setting.email": bodySetting.email,
+          "setting.website": bodySetting.website,
+          "setting.receipt_size": bodySetting.receipt_size,
+          "setting.default_currency":
+            bodySetting.default_currency || DEFAULT_GLOBAL_SETTING.default_currency,
+          "setting.default_time_zone":
+            bodySetting.default_time_zone || DEFAULT_GLOBAL_SETTING.default_time_zone,
+          "setting.default_date_format":
+            bodySetting.default_date_format || DEFAULT_GLOBAL_SETTING.default_date_format,
 
           //for store setting
-          "setting.cod_status": req.body.setting.cod_status,
-          "setting.stripe_status": req.body.setting.stripe_status,
-          "setting.fb_pixel_status": req.body.setting.fb_pixel_status,
-          "setting.google_login_status": req.body.setting.google_login_status,
+          "setting.cod_status": bodySetting.cod_status,
+          "setting.stripe_status": bodySetting.stripe_status,
+          "setting.fb_pixel_status": bodySetting.fb_pixel_status,
+          "setting.google_login_status": bodySetting.google_login_status,
           "setting.google_analytic_status":
-            req.body.setting.google_analytic_status,
-          "setting.stripe_key": req.body.setting.stripe_key,
-          "setting.stripe_secret": req.body.setting.stripe_secret,
-          "setting.google_client_id": req.body.setting.google_client_id,
-          "setting.google_secret_key": req.body.setting.google_secret_key,
-          "setting.google_analytic_key": req.body.setting.google_analytic_key,
-          "setting.fb_pixel_key": req.body.setting.fb_pixel_key,
-          "setting.tawk_chat_status": req.body.setting.tawk_chat_status,
+            bodySetting.google_analytic_status,
+          "setting.stripe_key": bodySetting.stripe_key,
+          "setting.stripe_secret": bodySetting.stripe_secret,
+          "setting.google_client_id": bodySetting.google_client_id,
+          "setting.google_secret_key": bodySetting.google_secret_key,
+          "setting.google_analytic_key": bodySetting.google_analytic_key,
+          "setting.fb_pixel_key": bodySetting.fb_pixel_key,
+          "setting.tawk_chat_status": bodySetting.tawk_chat_status,
           "setting.tawk_chat_property_id":
-            req.body.setting.tawk_chat_property_id,
-          "setting.tawk_chat_widget_id": req.body.setting.tawk_chat_widget_id,
+            bodySetting.tawk_chat_property_id,
+          "setting.tawk_chat_widget_id": bodySetting.tawk_chat_widget_id,
           // //for seo
-          "setting.meta_img": req.body.setting.meta_img,
-          "setting.favicon": req.body.setting.favicon,
-          "setting.meta_title": req.body.setting.meta_title,
-          "setting.meta_description": req.body.setting.meta_description,
-          "setting.meta_keywords": req.body.setting.meta_keywords,
-          "setting.meta_url": req.body.setting.meta_url,
+          "setting.meta_img": bodySetting.meta_img,
+          "setting.favicon": bodySetting.favicon,
+          "setting.meta_title": bodySetting.meta_title,
+          "setting.meta_description": bodySetting.meta_description,
+          "setting.meta_keywords": bodySetting.meta_keywords,
+          "setting.meta_url": bodySetting.meta_url,
         },
-      }
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
     res.send({
@@ -92,8 +153,15 @@ const updateGlobalSetting = async (req, res) => {
 //store setting controller
 const addStoreSetting = async (req, res) => {
   try {
-    const newStoreSetting = new Setting(req.body);
-    await newStoreSetting.save();
+    const payload = {
+      ...req.body,
+      name: "storeSetting",
+    };
+    await Setting.findOneAndUpdate(
+      { name: "storeSetting" },
+      { $set: { setting: payload.setting || req.body.setting || req.body } },
+      { upsert: true }
+    );
     res.send({
       message: "Store Setting Added Successfully!",
     });
@@ -106,8 +174,12 @@ const addStoreSetting = async (req, res) => {
 
 const getStoreSetting = async (req, res) => {
   try {
-    const storeSetting = await Setting.findOne({ name: "storeSetting" });
-    res.send(storeSetting.setting);
+    const storeSetting = await ensureSettingDocument(
+      "storeSetting",
+      DEFAULT_STORE_SETTING
+    );
+
+    res.send(storeSetting.setting || DEFAULT_STORE_SETTING);
   } catch (err) {
     res.status(500).send({
       message: err.message,
@@ -117,44 +189,46 @@ const getStoreSetting = async (req, res) => {
 
 const updateStoreSetting = async (req, res) => {
   try {
-    const storeSetting = await Setting.updateOne(
+    const bodySetting = req.body.setting || req.body;
+    const storeSetting = await Setting.findOneAndUpdate(
       {
         name: "storeSetting",
       },
       {
         $set: {
           //for store setting
-          "setting.cod_status": req.body.setting.cod_status,
-          "setting.stripe_status": req.body.setting.stripe_status,
-          "setting.razorpay_status": req.body.setting.razorpay_status,
-          "setting.fb_pixel_status": req.body.setting.fb_pixel_status,
-          "setting.google_login_status": req.body.setting.google_login_status,
-          "setting.github_login_status": req.body.setting.github_login_status,
+          "setting.cod_status": bodySetting.cod_status,
+          "setting.stripe_status": bodySetting.stripe_status,
+          "setting.razorpay_status": bodySetting.razorpay_status,
+          "setting.fb_pixel_status": bodySetting.fb_pixel_status,
+          "setting.google_login_status": bodySetting.google_login_status,
+          "setting.github_login_status": bodySetting.github_login_status,
           "setting.facebook_login_status":
-            req.body.setting.facebook_login_status,
+            bodySetting.facebook_login_status,
           "setting.google_analytic_status":
-            req.body.setting.google_analytic_status,
-          "setting.stripe_key": req.body.setting.stripe_key,
-          "setting.stripe_secret": req.body.setting.stripe_secret,
-          "setting.razorpay_id": req.body.setting.razorpay_id,
-          "setting.razorpay_secret": req.body.setting.razorpay_secret,
-          "setting.google_id": req.body.setting.google_id,
-          "setting.google_secret": req.body.setting.google_secret,
-          "setting.github_id": req.body.setting.github_id,
-          "setting.github_secret": req.body.setting.github_secret,
-          "setting.facebook_id": req.body.setting.facebook_id,
-          "setting.facebook_secret": req.body.setting.facebook_secret,
-          "setting.nextauth_secret": req.body.setting.nextauth_secret,
-          "setting.next_api_base_url": req.body.setting.next_api_base_url,
+            bodySetting.google_analytic_status,
+          "setting.stripe_key": bodySetting.stripe_key,
+          "setting.stripe_secret": bodySetting.stripe_secret,
+          "setting.razorpay_id": bodySetting.razorpay_id,
+          "setting.razorpay_secret": bodySetting.razorpay_secret,
+          "setting.google_id": bodySetting.google_id,
+          "setting.google_secret": bodySetting.google_secret,
+          "setting.github_id": bodySetting.github_id,
+          "setting.github_secret": bodySetting.github_secret,
+          "setting.facebook_id": bodySetting.facebook_id,
+          "setting.facebook_secret": bodySetting.facebook_secret,
+          "setting.nextauth_secret": bodySetting.nextauth_secret,
+          "setting.next_api_base_url": bodySetting.next_api_base_url,
 
-          "setting.google_analytic_key": req.body.setting.google_analytic_key,
-          "setting.fb_pixel_key": req.body.setting.fb_pixel_key,
-          "setting.tawk_chat_status": req.body.setting.tawk_chat_status,
+          "setting.google_analytic_key": bodySetting.google_analytic_key,
+          "setting.fb_pixel_key": bodySetting.fb_pixel_key,
+          "setting.tawk_chat_status": bodySetting.tawk_chat_status,
           "setting.tawk_chat_property_id":
-            req.body.setting.tawk_chat_property_id,
-          "setting.tawk_chat_widget_id": req.body.setting.tawk_chat_widget_id,
+            bodySetting.tawk_chat_property_id,
+          "setting.tawk_chat_widget_id": bodySetting.tawk_chat_widget_id,
         },
-      }
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
     res.send({
@@ -171,8 +245,15 @@ const updateStoreSetting = async (req, res) => {
 //online store customization controller
 const addStoreCustomizationSetting = async (req, res) => {
   try {
-    const newStoreCustomizationSetting = new Setting(req.body);
-    const storeCustomizationSetting = await newStoreCustomizationSetting.save();
+    const payload = {
+      ...req.body,
+      name: "storeCustomizationSetting",
+    };
+    const storeCustomizationSetting = await Setting.findOneAndUpdate(
+      { name: "storeCustomizationSetting" },
+      { $set: { setting: payload.setting || req.body.setting || req.body } },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
 
     res.send({
       data: storeCustomizationSetting,
@@ -189,31 +270,29 @@ const getStoreCustomizationSetting = async (req, res) => {
   try {
     const { key, keyTwo } = req.query;
 
-    // console.log("req query", req.query, "key", key, "keyTwo", keyTwo);
-
-    let projection = {};
-    if (key) {
-      projection[`setting.${key}`] = 1;
-    }
-    if (keyTwo) {
-      projection[`setting.${keyTwo}`] = 1;
-    }
-
-    // If neither key nor keyTwo is provided, fetch all settings
-    if (!key && !keyTwo) {
-      projection = { setting: 1 };
-    }
-
-    const storeCustomizationSetting = await Setting.findOne(
-      { name: "storeCustomizationSetting" },
-      projection
+    const storeCustomizationSetting = await ensureSettingDocument(
+      "storeCustomizationSetting",
+      DEFAULT_STORE_CUSTOMIZATION_SETTING
     );
 
     if (!storeCustomizationSetting) {
       return res.status(404).send({ message: "Settings not found" });
     }
 
-    res.send(storeCustomizationSetting.setting);
+    const selection = storeCustomizationSetting.setting || DEFAULT_STORE_CUSTOMIZATION_SETTING;
+
+    if (key || keyTwo) {
+      const partial = {};
+      if (key && selection[key] !== undefined) {
+        partial[key] = selection[key];
+      }
+      if (keyTwo && selection[keyTwo] !== undefined) {
+        partial[keyTwo] = selection[keyTwo];
+      }
+      return res.send(partial);
+    }
+
+    res.send(selection);
   } catch (err) {
     res.status(500).send({ message: err.message });
   }
@@ -222,13 +301,10 @@ const getStoreCustomizationSetting = async (req, res) => {
 const getStoreSeoSetting = async (req, res) => {
   // console.log("getStoreSeoSetting");
   try {
-    const storeCustomizationSetting = await Setting.findOne(
-      {
-        name: "storeCustomizationSetting",
-      },
-      { "setting.seo": 1, _id: 0 }
+    const storeCustomizationSetting = await ensureSettingDocument(
+      "storeCustomizationSetting",
+      DEFAULT_STORE_CUSTOMIZATION_SETTING
     );
-    // console.log("storeCustomizationSetting", storeCustomizationSetting);
     res.send(storeCustomizationSetting?.setting);
   } catch (err) {
     res.status(500).send({
@@ -239,7 +315,7 @@ const getStoreSeoSetting = async (req, res) => {
 
 const updateStoreCustomizationSetting = async (req, res) => {
   try {
-    const setting = req.body.setting;
+    const setting = req.body.setting || req.body;
     // console.log("updateStoreCustomizationSetting");
 
     const storeCustomizationSetting = await Setting.findOneAndUpdate(
@@ -671,7 +747,8 @@ const updateStoreCustomizationSetting = async (req, res) => {
       },
       {
         new: true,
-      }
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
     res.send({

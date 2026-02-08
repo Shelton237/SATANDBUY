@@ -1,86 +1,125 @@
 import HttpService from "@/services/httpService";
 import { withToken } from "@/utils/tokenHelper";
-import { ENDPOINT } from "@/config/product-services";
 
-const { PRODUCT_SERVICE } = ENDPOINT;
-const { products } = PRODUCT_SERVICE;
+const API_BASE_URL = import.meta.env.VITE_APP_API_BASE_URL;
 
-const httpService = new HttpService(PRODUCT_SERVICE.base);
+const http = new HttpService(API_BASE_URL, {
+  "Content-Type": "application/json",
+});
+
+const mapProduct = (product = {}) => ({
+  ...product,
+  id: product._id,
+  status: product.status || "show",
+  type: product.type || "physical",
+  serviceDetails: product.serviceDetails || null,
+  approvalStatus: product.approvalStatus || "approved",
+});
+
+const buildQueryString = (params = {}) => {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "" && value !== "All") {
+      query.append(key, value);
+    }
+  });
+  return query.toString();
+};
 
 const ProductServices = {
-  getAll: ({ page = 0, size = 20, sortBy = "name", sortDir = "ASC" } = {}) =>
+  getAll: ({
+    page = 1,
+    limit = 20,
+    category,
+    title,
+    price,
+    owner,
+  } = {}) =>
     withToken(async (token) => {
-      const params = new URLSearchParams({ page, size, sortBy, sortDir }).toString();
-      const response = await httpService.get(products.list(params), token);
+      const queryString = buildQueryString({
+        page,
+        limit,
+        category,
+        title,
+        price,
+        owner,
+      });
 
-      const data = response?.data?.data || {};
+      const response = await http.get(
+        queryString ? `/products?${queryString}` : "/products",
+        token
+      );
+
+      const payload = response?.data || {};
+      const products = Array.isArray(payload.products)
+        ? payload.products.map(mapProduct)
+        : [];
 
       return {
-        data: Array.isArray(data.content) ? data.content : [],
-        pagination: {
-          totalElements: data.totalElements ?? 0,
-          totalPages: data.totalPages ?? 0,
-          size: data.size ?? size,
-          number: data.number ?? page,
-          last: data.last ?? true,
-          first: data.first ?? true,
-        },
+        products,
+        totalDoc: payload.totalDoc ?? products.length,
+        limits: payload.limits ?? limit,
+        pages: payload.pages ?? page,
       };
     }),
 
-  getAllRaw: ({ page = 0, size = 1000, sortBy = "name", sortDir = "ASC" } = {}) =>
+  getProductById: (id) =>
     withToken(async (token) => {
-      const params = new URLSearchParams({ page, size, sortBy, sortDir }).toString();
-      const response = await httpService.get(products.list(params), token);
-      return response.data;
+      if (!id) throw new Error("Product id is required");
+      const response = await http.get(`/products/${id}`, token);
+      return mapProduct(response?.data || {});
     }),
 
-  getById: (id) =>
+  addProduct: (data) =>
     withToken(async (token) => {
-      try {
-        const response = await httpService.get(products.getById(id), token);
-        return response.data;
-      } catch (error) {
-        console.error("Erreur lors du fetch du produit :", error);
-        throw error;
-      }
+      const response = await http.post("/products/add", data, token);
+      return mapProduct(response?.data);
     }),
 
-  addOne: (data) =>
+  updateProduct: (id, data) =>
     withToken(async (token) => {
-      const response = await httpService.post(products.create(), data, token);
-      return response.data;
+      const response = await http.patch(`/products/${id}`, data, token);
+      return response?.data || {};
     }),
 
-  updateOne: (id, data) =>
+  updateStatus: (id, body) =>
     withToken(async (token) => {
-      const response = await httpService.put(products.update(id), data, token);
-      return response.data;
+      const response = await http.put(`/products/status/${id}`, body, token);
+      return response?.data || {};
     }),
 
-  deleteOne: (id) =>
+  updateApprovalStatus: (id, body) =>
     withToken(async (token) => {
-      const response = await httpService.delete(products.delete(id), token);
-      return response.data;
+      const response = await http.put(
+        `/products/approval/${id}`,
+        body,
+        token
+      );
+      return response?.data || {};
     }),
 
-  addVariant: (productId, variantData) =>
+  deleteProduct: (id) =>
     withToken(async (token) => {
-      const response = await httpService.post(products.addVariant(productId), variantData, token);
-      return response.data;
+      const response = await http.delete(`/products/${id}`, token);
+      return response?.data || {};
     }),
 
-  updateVariant: (productId, variantId, variantData) =>
+  deleteManyProducts: (body) =>
     withToken(async (token) => {
-      const response = await httpService.put(products.updateVariant(productId, variantId), variantData, token);
-      return response.data;
+      const response = await http.patch(`/products/delete/many`, body, token);
+      return response?.data || {};
     }),
 
-  deleteVariant: (productId, variantId) =>
+  addAllProducts: (body) =>
     withToken(async (token) => {
-      // Note: Vous devrez peut-être ajouter une route deleteVariant dans votre configuration ENDPOINT
-      const response = await httpService.delete(`/products/${productId}/variants/${variantId}`, token);
-      return response.data;
+      const response = await http.post(`/products/all`, body, token);
+      return response?.data || {};
+    }),
+
+  updateManyProducts: (body) =>
+    withToken(async (token) => {
+      const response = await http.patch(`/products/update/many`, body, token);
+      return response?.data || {};
     }),
 };
 

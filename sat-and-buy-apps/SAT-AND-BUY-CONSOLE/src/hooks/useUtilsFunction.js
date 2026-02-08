@@ -5,6 +5,14 @@ import { addSetting, removeSetting } from "@/reduxStore/slice/settingSlice";
 import { useContext, useEffect, useState } from "react";
 import { SidebarContext } from "@/context/SidebarContext";
 
+const sanitizeSettingPayload = (payload) => {
+  try {
+    return JSON.parse(JSON.stringify(payload || {}));
+  } catch (err) {
+    return payload || {};
+  }
+};
+
 const useUtilsFunction = () => {
   const dispatch = useDispatch();
   const [error, setError] = useState("");
@@ -56,26 +64,28 @@ const useUtilsFunction = () => {
     return data !== undefined ? data : "!#";
   };
 
-  const currency = globalSetting?.default_currency || "$";
+  const currency = globalSetting?.default_currency || "FCFA";
 
   useEffect(() => {
     // console.log("globalSetting", globalSetting);
     const fetchGlobalSetting = async () => {
       try {
         setLoading(true);
-        console.log("globalSetting setting not available");
         const res = await SettingServices.getGlobalSetting();
         const globalSettingData = {
-          ...res,
+          ...sanitizeSettingPayload(res),
           name: "globalSetting",
         };
 
         dispatch(addSetting(globalSettingData));
-
-        setLoading(false);
       } catch (err) {
         setError(err.message);
-        console.log("Error on getting storeCustomizationSetting setting", err);
+        console.error(
+          "Error on getting storeCustomizationSetting setting",
+          err
+        );
+      } finally {
+        setLoading(false);
       }
     };
 

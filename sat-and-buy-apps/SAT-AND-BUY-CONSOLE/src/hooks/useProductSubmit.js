@@ -13,6 +13,40 @@ import { notifyError, notifySuccess } from "@/utils/toast";
 // import useTranslationValue from "./useTranslationValue";
 import useUtilsFunction from "./useUtilsFunction";
 
+const SERVICE_DETAILS_TEMPLATE = {
+  deliveryMode: "onsite",
+  durationValue: "",
+  durationUnit: "hours",
+  location: "",
+  resources: "",
+  notes: "",
+  priceIncludes: "",
+};
+
+const normalizeTags = (value) => {
+  if (!value) return [];
+  if (Array.isArray(value)) {
+    return value.filter((item) => !!item && item.toString().trim() !== "");
+  }
+
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        return parsed.filter((item) => !!item && item.toString().trim() !== "");
+      }
+    } catch (err) {
+      // ignore parsing error and fallback to split
+    }
+    return value
+      .split(",")
+      .map((item) => item.trim())
+      .filter((item) => item !== "");
+  }
+
+  return [];
+};
+
 const useProductSubmit = (id) => {
   const location = useLocation();
   const { isDrawerOpen, closeDrawer, setIsUpdate, lang } =
@@ -54,6 +88,10 @@ const useProductSubmit = (id) => {
   const [openModal, setOpenModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [slug, setSlug] = useState("");
+  const [productType, setProductType] = useState("physical");
+  const [serviceDetails, setServiceDetails] = useState({
+    ...SERVICE_DETAILS_TEMPLATE,
+  });
 
   // const { handlerTextTranslateHandler } = useTranslationValue();
   const { showingTranslateValue, getNumber, getNumberTwo } = useUtilsFunction();
@@ -77,6 +115,48 @@ const useProductSubmit = (id) => {
     clearErrors,
     formState: { errors },
   } = useForm();
+
+  const handleProductTypeChange = (nextType) => {
+    setProductType(nextType);
+    if (nextType === "service") {
+      setIsCombination(false);
+      setValue("stock", 0);
+    }
+  };
+
+  const handleServiceDetailsChange = (field, value) => {
+    setServiceDetails((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const buildServicePayload = () => {
+    if (productType !== "service") return null;
+    const payload = {
+      deliveryMode: serviceDetails.deliveryMode || "onsite",
+      durationUnit: serviceDetails.durationUnit || "hours",
+    };
+    if (
+      serviceDetails.durationValue !== "" &&
+      serviceDetails.durationValue !== null &&
+      typeof serviceDetails.durationValue !== "undefined"
+    ) {
+      const durationValue = Number(serviceDetails.durationValue);
+      if (Number.isFinite(durationValue) && durationValue >= 0) {
+        payload.durationValue = durationValue;
+      }
+    }
+
+    ["location", "resources", "notes", "priceIncludes"].forEach((field) => {
+      const value = serviceDetails[field];
+      if (value && value.toString().trim() !== "") {
+        payload[field] = value.toString().trim();
+      }
+    });
+
+    return payload;
+  };
 
   const onSubmit = async (data) => {
     // console.log('data is data',data)
@@ -113,6 +193,9 @@ const useProductSubmit = (id) => {
       setSku(data.sku);
       setOriginalPrice(data.originalPrice);
 
+      const isService = productType === "service";
+      const servicePayload = isService ? buildServicePayload() : null;
+
       // const titleTranslates = await handlerTextTranslateHandler(
       //   data.title,
       //   language
@@ -138,20 +221,29 @@ const useProductSubmit = (id) => {
           ? data.slug
           : data.title.toLowerCase().replace(/[^A-Z0-9]+/gi, "-"),
 
-        categories: selectedCategory.map((item) => item._id),
-        category: defaultCategory[0]._id,
+        categories: selectedCategory.map((item) => item.id || item._id),
+        category: defaultCategory[0].id || defaultCategory[0]._id,
 
         image: imageUrl,
-        stock: variants?.length < 1 ? data.stock : Number(totalStock),
-        tag: JSON.stringify(tag),
+        stock: isService
+          ? 0
+          : variants?.length < 1
+          ? data.stock
+          : Number(totalStock),
+        tag: tag,
 
         prices: {
           price: getNumber(data.price),
           originalPrice: getNumberTwo(data.originalPrice),
           discount: Number(data.originalPrice) - Number(data.price),
         },
-        isCombination: updatedVariants?.length > 0 ? isCombination : false,
+        isCombination:
+          isService || !updatedVariants?.length
+            ? false
+            : isCombination,
         variants: isCombination ? updatedVariants : [],
+        type: productType,
+        serviceDetails: servicePayload,
       };
 
       // console.log("productData ===========>", productData, "data", data);
@@ -183,14 +275,14 @@ const useProductSubmit = (id) => {
         const res = await ProductServices.addProduct(productData);
         // console.log("res is ", res);
         if (isCombination) {
-          setUpdatedId(res._id);
+          setUpdatedId(res.id || res._id);
           setValue("title", res.title[language ? language : "en"]);
           setValue("description", res.description[language ? language : "en"]);
           setValue("slug", res.slug);
           setValue("show", res.show);
           setValue("barcode", res.barcode);
           setValue("stock", res.stock);
-          setTag(JSON.parse(res.tag));
+          setTag(normalizeTags(res.tag));
           setImageUrl(res.image);
           setVariants(res.variants);
           setValue("productId", res.productId);
@@ -257,6 +349,7 @@ const useProductSubmit = (id) => {
       setValue("price");
       setValue("barcode");
       setValue("productId");
+      setValue("stock", 0);
 
       setProductId("");
       // setValue('show');
@@ -288,6 +381,8 @@ const useProductSubmit = (id) => {
       setIsBasicComplete(false);
       setIsSubmitting(false);
       setAttributes([]);
+      setProductType("physical");
+      setServiceDetails({ ...SERVICE_DETAILS_TEMPLATE });
 
       setUpdatedId();
       return;
@@ -306,7 +401,7 @@ const useProductSubmit = (id) => {
           if (res) {
             setResData(res);
             setSlug(res.slug);
-            setUpdatedId(res._id);
+            setUpdatedId(res.id || res._id);
             setValue("title", res.title[language ? language : "en"]);
             setValue(
               "description",
@@ -321,7 +416,7 @@ const useProductSubmit = (id) => {
             setValue("price", res?.prices?.price);
             setValue("originalPrice", res?.prices?.originalPrice);
             setValue("stock", res.stock);
-            setProductId(res.productId ? res.productId : res._id);
+            setProductId(res.productId ? res.productId : res.id || res._id);
             setBarcode(res.barcode);
             setSku(res.sku);
 
@@ -338,14 +433,34 @@ const useProductSubmit = (id) => {
 
             setSelectedCategory(res.categories);
             setDefaultCategory([res?.category]);
-            setTag(JSON.parse(res.tag));
+            setTag(normalizeTags(res.tag));
             setImageUrl(res.image);
             setVariants(res.variants);
-            setIsCombination(res.isCombination);
             setQuantity(res?.stock);
             setTotalStock(res.stock);
             setOriginalPrice(res?.prices?.originalPrice);
             setPrice(res?.prices?.price);
+
+            const resolvedType = res.type || "physical";
+            setProductType(resolvedType);
+
+            if (resolvedType === "service") {
+              setServiceDetails({
+                ...SERVICE_DETAILS_TEMPLATE,
+                ...res.serviceDetails,
+                durationValue:
+                  typeof res?.serviceDetails?.durationValue === "number"
+                    ? res.serviceDetails.durationValue.toString()
+                    : res?.serviceDetails?.durationValue || "",
+              });
+              setIsCombination(false);
+              setValue("stock", 0);
+            } else {
+              setServiceDetails({
+                ...SERVICE_DETAILS_TEMPLATE,
+              });
+              setIsCombination(res.isCombination);
+            }
           }
         } catch (err) {
           notifyError(err?.response?.data?.message || err?.message);
@@ -377,7 +492,9 @@ const useProductSubmit = (id) => {
     setAttTitle([...result]);
 
     const res = Object?.keys(Object.assign({}, ...variants));
-    const varTitle = attribue?.filter((att) => res.includes(att._id));
+    const varTitle = attribue?.filter((att) =>
+      res.includes(att.id || att._id)
+    );
 
     if (variants?.length > 0) {
       const totalStock = variants?.reduce((pre, acc) => pre + acc.quantity, 0);
@@ -692,6 +809,10 @@ const useProductSubmit = (id) => {
     handleSelectImage,
     handleSelectInlineImage,
     handleGenerateCombination,
+    productType,
+    serviceDetails,
+    handleProductTypeChange,
+    handleServiceDetailsChange,
   };
 };
 

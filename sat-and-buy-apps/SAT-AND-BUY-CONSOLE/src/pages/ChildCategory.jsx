@@ -46,9 +46,10 @@ const ChildCategory = () => {
   const { t } = useTranslation();
 
   useEffect(() => {
+    const getId = (node) => node?.id || node?._id;
     const getAncestors = (target, children, ancestors = []) => {
       for (let node of children) {
-        if (node._id === target) {
+        if (getId(node) === target) {
           return ancestors.concat(node);
         }
         const found = getAncestors(
@@ -65,7 +66,7 @@ const ChildCategory = () => {
 
     const findChildArray = (obj, target) => {
       // console.log('obj', obj);
-      return obj._id === target
+      return getId(obj) === target
         ? obj
         : obj?.children?.reduce(
             (acc, obj) => acc ?? findChildArray(obj, target),
@@ -95,7 +96,7 @@ const ChildCategory = () => {
 
   const handleSelectAll = () => {
     setIsCheckAll(!isCheckAll);
-    setIsCheck(childCategory?.map((li) => li._id));
+    setIsCheck(childCategory?.map((li) => getId(li)));
     if (isCheckAll) {
       setIsCheck([]);
     }

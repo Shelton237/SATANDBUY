@@ -14,6 +14,7 @@ const ParentCategory = ({
 }) => {
   const { data, loading } = useAsync(CategoryServices?.getAllCategory);
   const { showingTranslateValue } = useUtilsFunction();
+  const getCategoryId = (category) => category?.id || category?._id;
 
   const STYLE = `
   .rc-tree-child-tree {
@@ -41,7 +42,7 @@ const ParentCategory = ({
     for (let category of categories) {
       myCategories.push({
         title: showingTranslateValue(category.name),
-        key: category._id,
+        key: getCategoryId(category),
         children:
           category?.children?.length > 0 && renderCategories(category.children),
       });
@@ -51,7 +52,7 @@ const ParentCategory = ({
   };
 
   const findObject = (obj, target) => {
-    return obj._id === target
+    return getCategoryId(obj) === target
       ? obj
       : obj?.children?.reduce(
           (acc, obj) => acc ?? findObject(obj, target),
@@ -72,7 +73,7 @@ const ParentCategory = ({
 
     if (result !== undefined) {
       const getCategory = selectedCategory.filter(
-        (value) => value._id === result._id
+        (value) => value.id === getCategoryId(result)
       );
 
       if (getCategory.length !== 0) {
@@ -82,13 +83,13 @@ const ParentCategory = ({
       setSelectedCategory((pre) => [
         ...pre,
         {
-          _id: result?._id,
+          id: getCategoryId(result),
           name: showingTranslateValue(result?.name),
         },
       ]);
       setDefaultCategory(() => [
         {
-          _id: result?._id,
+          id: getCategoryId(result),
           name: showingTranslateValue(result?.name),
         },
       ]);

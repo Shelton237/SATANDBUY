@@ -17,7 +17,8 @@ const ChildAttributeTable = ({
   isCheck,
   setIsCheck,
   childAttributes,
-  code,
+  attributeId,
+  attributeSlug,
 }) => {
 
   const { title, serviceId, handleModalOpen, handleUpdate } = useToggleDrawer();
@@ -31,31 +32,28 @@ const ChildAttributeTable = ({
     }
   };
 
+  const formatName = (value) =>
+    typeof value === "object" ? showingTranslateValue(value) : value;
+
   const renderAttributeData = (attribute) => {
-    switch (code) {
-      case 'sizes':
+    switch (attributeSlug) {
+      case "sizes":
         return (
           <>
-            <TableCell className="font-semibold uppercase text-xs">
-              {attribute?.id}
-            </TableCell>
             <TableCell className="font-medium text-sm">
-              {attribute?.name}
+              {formatName(attribute?.name)}
             </TableCell>
           </>
         );
 
-      case 'colors':
+      case "colors":
         return (
           <>
-            <TableCell className="font-semibold uppercase text-xs">
-              {attribute?.id}
+            <TableCell className="font-medium text-sm">
+              {formatName(attribute?.name)}
             </TableCell>
             <TableCell className="font-medium text-sm">
-              {attribute?.name}
-            </TableCell>
-            <TableCell className="font-medium text-sm">
-              {attribute?.hexCode && (
+              {attribute?.hexCode ? (
                 <div className="flex items-center">
                   <div
                     className="w-4 h-4 rounded-full mr-2 border border-gray-300"
@@ -63,32 +61,31 @@ const ChildAttributeTable = ({
                   />
                   {attribute.hexCode}
                 </div>
+              ) : (
+                "-"
               )}
             </TableCell>
           </>
         );
 
-      case 'brands':
+      case "brands":
         return (
           <>
-            <TableCell className="font-semibold uppercase text-xs">
-              {attribute?.id}
+            <TableCell className="font-medium text-sm">
+              {formatName(attribute?.name)}
             </TableCell>
             <TableCell className="font-medium text-sm">
-              {attribute?.name}
-            </TableCell>
-            <TableCell className="font-medium text-sm">
-              {attribute?.description || '-'}
+              {attribute?.description || "-"}
             </TableCell>
             <TableCell className="font-medium text-sm">
               {attribute?.logoUrl ? (
                 <img
                   src={attribute.logoUrl}
-                  alt={attribute.name}
+                  alt={formatName(attribute?.name)}
                   className="w-8 h-8 object-contain"
                 />
               ) : (
-                '-'
+                "-"
               )}
             </TableCell>
           </>
@@ -97,13 +94,9 @@ const ChildAttributeTable = ({
       default:
         return (
           <>
-            <TableCell className="font-semibold uppercase text-xs">
-              {attribute?.id}
-            </TableCell>
             <TableCell className="font-medium text-sm">
-              {attribute?.name}
+              {formatName(attribute?.name)}
             </TableCell>
-            <TableCell className="font-medium text-sm">-</TableCell>
           </>
         );
     }
@@ -111,11 +104,22 @@ const ChildAttributeTable = ({
 
   return (
     <>
-      {isCheck.length < 1 && <DeleteModal id={serviceId} title={title} setIsCheck={setIsCheck} code={code}/>}
+      {attributeId && isCheck.length < 1 && (
+        <DeleteModal
+          id={serviceId}
+          title={title}
+          setIsCheck={setIsCheck}
+          code={attributeId}
+        />
+      )}
 
-      {isCheck.length < 2 && (
+      {attributeId && isCheck.length < 2 && (
         <MainDrawer>
-          <AttributeChildDrawer id={serviceId} code={code} />
+          <AttributeChildDrawer
+            id={serviceId}
+            attributeId={attributeId}
+            attributeSlug={attributeSlug}
+          />
         </MainDrawer>
       )}
 

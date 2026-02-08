@@ -1,67 +1,180 @@
 import HttpService from "@/services/httpService";
 import { withToken } from "@/utils/tokenHelper";
-import { ENDPOINT } from "@/config/product-services";
 
-const { PRODUCT_SERVICE } = ENDPOINT;
-const { categories } = PRODUCT_SERVICE;
+const API_BASE_URL = import.meta.env.VITE_APP_API_BASE_URL;
 
-const httpService = new HttpService(PRODUCT_SERVICE.base);
+const http = new HttpService(API_BASE_URL, {
+  "Content-Type": "application/json",
+});
+
+const STATUS = {
+  ACTIVE: "ACTIVE",
+  INACTIVE: "INACTIVE",
+};
+
+const normalizeStatus = (status) => {
+  const normalized = status?.toString().toLowerCase();
+  if (normalized === "show" || normalized === "active") return STATUS.ACTIVE;
+  return STATUS.INACTIVE;
+};
+
+const toApiStatus = (status) => {
+  if (!status) return "show";
+  const normalized = status.toString().toLowerCase();
+  return normalized === "inactive" || normalized === "hide" ? "hide" : "show";
+};
+
+const mapCategory = (category = {}) => ({
+  ...category,
+  id: category._id?.toString() || category.id,
+  status: normalizeStatus(category.status),
+  rawStatus: category.status,
+  parentId: category.parentId || null,
+  children: Array.isArray(category.children)
+    ? category.children.map(mapCategory)
+    : [],
+});
+
+const mapFlatCategory = (category = {}) => ({
+  ...category,
+  id: category._id?.toString() || category.id,
+  status: normalizeStatus(category.status),
+  rawStatus: category.status,
+});
+
+const buildPagination = (items = [], page = 1, limit = 20) => {
+  const totalElements = items.length;
+  const totalPages = Math.max(1, Math.ceil(totalElements / limit));
+  return {
+    totalElements,
+    totalPages,
+    size: limit,
+    number: page,
+    last: page >= totalPages,
+    first: page <= 1,
+  };
+};
 
 const CategoryServices = {
-  getAll: ({ page = 0, size = 20, sortBy = "name", sortDir = "ASC" } = {}) =>
+  getAll: ({ page = 1, limit = 20 } = {}) =>
     withToken(async (token) => {
-      const params = new URLSearchParams({ page, size, sortBy, sortDir }).toString();
-      const response = await httpService.get(categories.list(params), token);
-
-      const data = response?.data?.data || {};
+      const response = await http.get("/category", token);
+      const categories = Array.isArray(response?.data)
+        ? response.data.map(mapCategory)
+        : [];
 
       return {
-        data: Array.isArray(data.content) ? data.content : [],
-        pagination: {
-          totalElements: data.totalElements ?? 0,
-          totalPages: data.totalPages ?? 0,
-          size: data.size ?? size,
-          number: data.number ?? page,
-          last: data.last ?? true,
-          first: data.first ?? true,
-        },
+        data: categories,
+        pagination: buildPagination(categories, page, limit),
       };
     }),
 
-  getAllRaw: ({ page = 0, size = 1000, sortBy = "name", sortDir = "ASC" } = {}) =>
+  getAllCategory: () =>
     withToken(async (token) => {
-      const params = new URLSearchParams({ page, size, sortBy, sortDir }).toString();
-      const response = await httpService.get(categories.list(params), token);
-      return response.data;
+      const response = await http.get("/category", token);
+      const categories = Array.isArray(response?.data)
+        ? response.data.map(mapCategory)
+        : [];
+      return categories;
+    }),
+
+  getAllCategories: () =>
+    withToken(async (token) => {
+      const response = await http.get("/category/all", token);
+      const categories = Array.isArray(response?.data)
+        ? response.data.map(mapFlatCategory)
+        : [];
+      return categories;
+    }),
+
+  getAllRaw: () =>
+    withToken(async (token) => {
+      const response = await http.get("/category/all", token);
+      const categories = Array.isArray(response?.data)
+        ? response.data.map(mapFlatCategory)
+        : [];
+      return categories;
     }),
 
   getById: (id) =>
     withToken(async (token) => {
-      try {
-        const response = await httpService.get(categories.getById(id), token);
-        return response.data;
-      } catch (error) {
-        console.error("Erreur lors du fetch de la catégorie :", error);
-        throw error;
-      }
+      const response = await http.get(`/category/${id}`, token);
+      return mapFlatCategory(response?.data || {});
     }),
 
-  addOne: (data) =>
+  addOne: (data = {}) =>
     withToken(async (token) => {
-      const response = await httpService.post(categories.create(), data, token);
-      return response.data;
+      const payload = {
+        ...data,
+        status: toApiStatus(data?.status),
+      };
+      const response = await http.post("/category/add", payload, token);
+      return response?.data;
     }),
 
-  updateOne: (id, data) =>
+  addAllCategory: (records = []) =>
     withToken(async (token) => {
-      const response = await httpService.put(categories.update(id), data, token);
-      return response.data;
+      const payload = records.map((record) => ({
+        ...record,
+        status: toApiStatus(record?.status),
+      }));
+      const response = await http.post("/category/add/all", payload, token);
+      return response?.data;
+    }),
+
+  updateOne: (id, data = {}) =>
+    withToken(async (token) => {
+      const payload = {
+        ...data,
+        status: data?.status ? toApiStatus(data.status) : undefined,
+      };
+      const response = await http.put(`/category/${id}`, payload, token);
+      return response?.data;
+    }),
+
+  updateStatus: (id, body = {}) =>
+    withToken(async (token) => {
+      const payload = {
+        status: toApiStatus(body?.status),
+      };
+      const response = await http.put(`/category/status/${id}`, payload, token);
+      return response?.data;
+    }),
+
+  updateManyCategory: (payload = {}) =>
+    withToken(async (token) => {
+      const normalizedPayload = {
+        ...payload,
+        status: payload?.status ? toApiStatus(payload.status) : undefined,
+      };
+      const response = await http.patch(
+        "/category/update/many",
+        normalizedPayload,
+        token
+      );
+      return response?.data;
     }),
 
   deleteOne: (id) =>
     withToken(async (token) => {
-      const response = await httpService.delete(categories.delete(id), token);
-      return response.data;
+      const response = await http.delete(`/category/${id}`, token);
+      return response?.data;
+    }),
+
+  deleteCategory: (id) =>
+    withToken(async (token) => {
+      const response = await http.delete(`/category/${id}`, token);
+      return response?.data;
+    }),
+
+  deleteManyCategory: (payload = {}) =>
+    withToken(async (token) => {
+      const response = await http.patch(
+        "/category/delete/many",
+        payload,
+        token
+      );
+      return response?.data;
     }),
 };
 

@@ -14,8 +14,29 @@ const EditDeleteButton = ({
   product,
   parent,
   children,
+  hasValues = false,
 }) => {
   const { t } = useTranslation();
+  const actionDisabled = isCheck?.length > 0 || hasValues;
+  const baseEditClasses = actionDisabled
+    ? "p-2 cursor-not-allowed text-gray-300 focus:outline-none"
+    : "p-2 cursor-pointer text-gray-400 hover:text-emerald-600 focus:outline-none";
+  const baseDeleteClasses = actionDisabled
+    ? "p-2 cursor-not-allowed text-gray-300 focus:outline-none"
+    : "p-2 cursor-pointer text-gray-400 hover:text-red-600 focus:outline-none";
+  const editTooltip = hasValues ? t("AttributeEditDisabled") : t("Edit");
+  const deleteTooltip = hasValues ? t("AttributeDeleteDisabled") : t("Delete");
+
+  const handleEdit = () => {
+    if (actionDisabled) return;
+    handleUpdate?.(id);
+  };
+
+  const handleDelete = () => {
+    if (actionDisabled) return;
+    handleModalOpen?.(id, title, product);
+  };
+
   return (
     <>
       <div className="flex justify-end text-right">
@@ -34,42 +55,42 @@ const EditDeleteButton = ({
             </Link>
 
             <button
-              disabled={isCheck?.length > 0}
-              onClick={() => handleUpdate(id)}
-              className="p-2 cursor-pointer text-gray-400 hover:text-emerald-600 focus:outline-none"
+              disabled={actionDisabled}
+              onClick={handleEdit}
+              className={baseEditClasses}
             >
               <Tooltip
                 id="edit"
                 Icon={FiEdit}
-                title={t("Edit")}
+                title={editTooltip}
                 bgColor="#10B981"
               />
             </button>
           </>
         ) : (
           <button
-            disabled={isCheck?.length > 0}
-            onClick={() => handleUpdate(id)}
-            className="p-2 cursor-pointer text-gray-400 hover:text-emerald-600 focus:outline-none"
+            disabled={actionDisabled}
+            onClick={handleEdit}
+            className={baseEditClasses}
           >
             <Tooltip
               id="edit"
               Icon={FiEdit}
-              title={t("Edit")}
+              title={editTooltip}
               bgColor="#10B981"
             />
           </button>
         )}
 
         <button
-          disabled={isCheck?.length > 0}
-          onClick={() => handleModalOpen(id, title, product)}
-          className="p-2 cursor-pointer text-gray-400 hover:text-red-600 focus:outline-none"
+          disabled={actionDisabled}
+          onClick={handleDelete}
+          className={baseDeleteClasses}
         >
           <Tooltip
             id="delete"
             Icon={FiTrash2}
-            title={t("Delete")}
+            title={deleteTooltip}
             bgColor="#EF4444"
           />
         </button>

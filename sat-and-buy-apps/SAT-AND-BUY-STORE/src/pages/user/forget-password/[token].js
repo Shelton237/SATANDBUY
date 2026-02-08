@@ -1,6 +1,5 @@
 import { useRouter } from "next/router";
 import React, { useState, useContext, useRef } from "react";
-import Cookies from "js-cookie";
 import { useForm } from "react-hook-form";
 import { FiLock, FiMail } from "react-icons/fi";
 import { ToastContainer } from "react-toastify";
@@ -11,6 +10,7 @@ import InputArea from "@components/form/InputArea";
 import CustomerServices from "@services/CustomerServices";
 import { UserContext } from "@context/UserContext";
 import { notifyError, notifySuccess } from "@utils/toast";
+import { persistUserSession } from "@lib/auth";
 
 const ForgetPassword = () => {
   const [loading, setLoading] = useState(false);
@@ -51,7 +51,7 @@ const ForgetPassword = () => {
 
     if (registerEmail && password) {
       CustomerServices.loginCustomer({
-        registerEmail,
+        email: registerEmail,
         password,
       })
         .then((res) => {
@@ -59,7 +59,7 @@ const ForgetPassword = () => {
           router.push("/");
           notifySuccess("Login Success!");
           dispatch({ type: "USER_LOGIN", payload: res });
-          Cookies.set("userInfo", JSON.stringify(res));
+          persistUserSession(res);
         })
         .catch((err) => {
           setLoading(false);

@@ -1,3 +1,4 @@
+# /var/www/SATANDBUY/sat-and-buy-apps/docker-compose.yml
 
 services:
   mongo:
@@ -13,11 +14,19 @@ services:
   backend:
     build:
       context: ./SAT-AND-BUY-BACKEND
+      extra_hosts:
+        - "console.dreamdigital.cm:38.242.216.23"
+        - "back-satbuy.dreamdigital.cm:38.242.216.23"
+        - "satandbuy.dreamdigital.cm:38.242.216.23"
     restart: unless-stopped
     env_file:
       - env/backend.prod.env
     depends_on:
       - mongo
+    extra_hosts:
+      - "console.dreamdigital.cm:38.242.216.23"
+      - "back-satbuy.dreamdigital.cm:38.242.216.23"
+      - "satandbuy.dreamdigital.cm:38.242.216.23"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.backend-http.rule=Host(`back-satbuy.dreamdigital.cm`)"
@@ -34,9 +43,17 @@ services:
   console:
     build:
       context: ./SAT-AND-BUY-CONSOLE
+      extra_hosts:
+        - "console.dreamdigital.cm:38.242.216.23"
+        - "back-satbuy.dreamdigital.cm:38.242.216.23"
+        - "satandbuy.dreamdigital.cm:38.242.216.23"
     restart: unless-stopped
     env_file:
       - env/console.prod.env
+    extra_hosts:
+      - "console.dreamdigital.cm:38.242.216.23"
+      - "back-satbuy.dreamdigital.cm:38.242.216.23"
+      - "satandbuy.dreamdigital.cm:38.242.216.23"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.console-http.rule=Host(`console.dreamdigital.cm`)"
@@ -53,6 +70,10 @@ services:
   store:
     build:
       context: ./SAT-AND-BUY-STORE
+      extra_hosts:
+        - "console.dreamdigital.cm:38.242.216.23"
+        - "back-satbuy.dreamdigital.cm:38.242.216.23"
+        - "satandbuy.dreamdigital.cm:38.242.216.23"
       args:
         NEXT_PUBLIC_API_BASE_URL: ${STORE_BUILD_API_BASE_URL:-https://back-satbuy.dreamdigital.cm/api}
         NEXT_PUBLIC_API_SOCKET_URL: ${STORE_BUILD_API_SOCKET_URL:-https://back-satbuy.dreamdigital.cm}
@@ -61,6 +82,10 @@ services:
     restart: unless-stopped
     env_file:
       - env/store.prod.env
+    extra_hosts:
+      - "console.dreamdigital.cm:38.242.216.23"
+      - "back-satbuy.dreamdigital.cm:38.242.216.23"
+      - "satandbuy.dreamdigital.cm:38.242.216.23"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.store-http.rule=Host(`satandbuy.dreamdigital.cm`)"
@@ -87,6 +112,10 @@ services:
       - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
       - ./traefik/acme.json:/letsencrypt/acme.json
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    extra_hosts:
+      - "console.dreamdigital.cm:38.242.216.23"
+      - "back-satbuy.dreamdigital.cm:38.242.216.23"
+      - "satandbuy.dreamdigital.cm:38.242.216.23"
     networks:
       - proxy
       - satandbuy

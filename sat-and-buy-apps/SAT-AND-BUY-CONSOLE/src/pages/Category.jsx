@@ -61,7 +61,11 @@ const Category = () => {
 
   const handleSelectAll = () => {
     if (!isCheckAll) {
-      const childIds = Array.isArray(data) ? data.flatMap((item) => item.children?.map((li) => li._id) || []) : [];
+      const childIds = Array.isArray(data)
+        ? data.flatMap((item) =>
+            item.children?.map((li) => li.id || li._id) || []
+          )
+        : [];
       setIsCheck(childIds);
     } else {
       setIsCheck([]);
@@ -208,7 +212,6 @@ const Category = () => {
                     isChecked={isCheckAll}
                   />
                 </TableCell>
-                <TableCell>{t("catIdTbl")}</TableCell>
                 <TableCell>{t("catIconTbl")}</TableCell>
                 <TableCell>{t("CatTbName")}</TableCell>
                 <TableCell>{t("CatTbType")}</TableCell>

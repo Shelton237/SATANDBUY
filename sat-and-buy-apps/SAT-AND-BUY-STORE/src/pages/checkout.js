@@ -30,7 +30,7 @@ import SwitchToggle from "@components/form/SwitchToggle";
 const Checkout = () => {
   const { t } = useTranslation();
   const { storeCustomizationSetting } = useGetSetting();
-  const { showingTranslateValue } = useUtilsFunction();
+  const { showingTranslateValue, currency } = useUtilsFunction();
   const { data: storeSetting } = useAsync(SettingServices.getStoreSetting);
 
   const {
@@ -42,7 +42,6 @@ const Checkout = () => {
     isEmpty,
     items,
     cartTotal,
-    currency,
     register,
     errors,
     showCard,
@@ -53,6 +52,9 @@ const Checkout = () => {
     handleCouponCode,
     discountAmount,
     shippingCost,
+    shippingRates,
+    shippingRateLoading,
+    selectedShippingRate,
     isCheckoutSubmit,
     useExistingAddress,
     hasShippingAddress,
@@ -221,54 +223,36 @@ const Checkout = () => {
                       )}
                     />
                     <div className="grid grid-cols-6 gap-6">
-                      <div className="col-span-6 sm:col-span-3">
-                        <InputShipping
-                          currency={currency}
-                          handleShippingCost={handleShippingCost}
-                          register={register}
-                          // value="FedEx"
-                          value={showingTranslateValue(
-                            storeCustomizationSetting?.checkout
-                              ?.shipping_name_two
-                          )}
-                          description={showingTranslateValue(
-                            storeCustomizationSetting?.checkout
-                              ?.shipping_one_desc
-                          )}
-                          // time="Today"
-                          cost={
-                            Number(
-                              storeCustomizationSetting?.checkout
-                                ?.shipping_one_cost
-                            ) || 60
-                          }
-                        />
-                        <Error errorName={errors.shippingOption} />
-                      </div>
-
-                      <div className="col-span-6 sm:col-span-3">
-                        <InputShipping
-                          currency={currency}
-                          handleShippingCost={handleShippingCost}
-                          register={register}
-                          value={showingTranslateValue(
-                            storeCustomizationSetting?.checkout
-                              ?.shipping_name_two
-                          )}
-                          description={showingTranslateValue(
-                            storeCustomizationSetting?.checkout
-                              ?.shipping_two_desc
-                          )}
-                          // time="7 Days"
-                          cost={
-                            Number(
-                              storeCustomizationSetting?.checkout
-                                ?.shipping_two_cost
-                            ) || 20
-                          }
-                        />
-                        <Error errorName={errors.shippingOption} />
-                      </div>
+                      {shippingRateLoading ? (
+                        <div className="col-span-6 text-sm text-gray-500">
+                          Calcul des options de livraison...
+                        </div>
+                      ) : shippingRates.length ? (
+                        shippingRates.map((rate) => (
+                          <div key={rate._id} className="col-span-6 sm:col-span-3">
+                            <InputShipping
+                              currency={currency}
+                              register={register}
+                              value={rate.label}
+                              description={
+                                rate.description ||
+                                `${rate.city}, ${rate.country}${
+                                  rate.estimatedTime ? ` · ${rate.estimatedTime}` : ""
+                                }`
+                              }
+                              cost={rate.cost}
+                              onSelect={() => handleShippingCost(rate)}
+                              checked={selectedShippingRate?._id === rate._id}
+                            />
+                            <Error errorName={errors.shippingOption} />
+                          </div>
+                        ))
+                      ) : (
+                        <div className="col-span-6 text-sm text-gray-500">
+                          Entrez votre pays et votre ville pour voir les options
+                          de livraison disponibles.
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="form-group mt-12">
@@ -306,7 +290,13 @@ const Checkout = () => {
                             name={t("common:creditCard")}
                             value="Card"
                             Icon={ImCreditCard}
+                            disabled={!stripe}
                           />
+                          {!stripe && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              Initialisation de Stripe en cours...
+                            </p>
+                          )}
                           <Error errorMessage={errors.paymentMethod} />
                         </div>
                       )}
@@ -343,7 +333,11 @@ const Checkout = () => {
                     <div className="col-span-6 sm:col-span-3">
                       <button
                         type="submit"
-                        disabled={isEmpty || !stripe || isCheckoutSubmit}
+                        disabled={
+                          isEmpty ||
+                          isCheckoutSubmit ||
+                          (showCard && !stripe)
+                        }
                         className="bg-emerald-500 hover:bg-emerald-600 border border-emerald-500 transition-all rounded py-3 text-center text-sm font-serif font-medium text-white flex justify-center w-full"
                       >
                         {isCheckoutSubmit ? (

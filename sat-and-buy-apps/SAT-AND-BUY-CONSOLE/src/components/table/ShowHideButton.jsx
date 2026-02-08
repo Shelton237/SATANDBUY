@@ -1,9 +1,10 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import Switch from "react-switch";
 import { useLocation } from "react-router-dom";
 
 //internal import
 import { SidebarContext } from "@/context/SidebarContext";
+import AdminServices from "@/services/AdminServices";
 import AttributeServices from "@/services/AttributeServices";
 import CategoryServices from "@/services/products/CategoryServices";
 import CouponServices from "@/services/CouponServices";
@@ -11,105 +12,92 @@ import CurrencyServices from "@/services/CurrencyServices";
 import LanguageServices from "@/services/LanguageServices";
 import ProductServices from "@/services/ProductServices";
 import { notifyError, notifySuccess } from "@/utils/toast";
-import Loading from "../preloader/Loading";
-import LoadingSpinner from "../LoadingSpinner";
+
+const ACTIVE_STATES = ["show", "active", "enabled", "published", "true", "1"];
+
+const isValueActive = (value) => {
+  if (typeof value === "boolean") return value;
+  const normalized = value?.toString().toLowerCase();
+  return ACTIVE_STATES.includes(normalized);
+};
 
 const ShowHideButton = ({ id, status, category, currencyStatusName }) => {
   const location = useLocation();
   const { setIsUpdate } = useContext(SidebarContext);
   const [isLoading, setIsLoading] = useState(false);
-  const [optimisticStatus, setOptimisticStatus] = useState(status);
-  
-  const handleChangeStatus = async (id) => {
-    const newStatus = optimisticStatus === "ACTIVE" ? "INACTIVE" : "ACTIVE";
-    setOptimisticStatus(newStatus);
-    // return notifyError("This option disabled for this option!");
-    try {
-      // let newStatus;
-      // if (status === "ACTIVE") {
-      //   newStatus = "INACTIVE";
-      // } else {
-      //   newStatus = "ACTIVE";
-      // }
+  const [isActive, setIsActive] = useState(isValueActive(status));
 
+  useEffect(() => {
+    setIsActive(isValueActive(status));
+  }, [status]);
+
+  const handleChangeStatus = async () => {
+    const previousState = isActive;
+    const nextIsActive = !previousState;
+    setIsActive(nextIsActive);
+    setIsLoading(true);
+    const uiStatus = nextIsActive ? "ACTIVE" : "INACTIVE";
+    const apiStatus = nextIsActive ? "show" : "hide";
+
+    try {
       if (location.pathname === "/categories" || category) {
         const res = await CategoryServices.updateOne(id, {
-          status: newStatus,
+          status: uiStatus,
         });
         setIsUpdate(true);
         notifySuccess(res.message);
-      }
-
-      if (location.pathname === "/products") {
+      } else if (location.pathname === "/products") {
         const res = await ProductServices.updateStatus(id, {
-          status: newStatus,
+          status: apiStatus,
         });
         setIsUpdate(true);
         notifySuccess(res.message);
-      }
-
-      if (location.pathname === "/languages") {
+      } else if (location.pathname === "/languages") {
         const res = await LanguageServices.updateStatus(id, {
-          status: newStatus,
+          status: apiStatus,
         });
         setIsUpdate(true);
         notifySuccess(res.message);
-      }
-      if (location.pathname === "/currencies") {
+      } else if (location.pathname === "/currencies") {
         if (currencyStatusName === "status") {
           const res = await CurrencyServices.updateEnabledStatus(id, {
-            status: newStatus,
+            status: apiStatus,
           });
           setIsUpdate(true);
           notifySuccess(res.message);
         } else {
           const res = await CurrencyServices.updateLiveExchangeRateStatus(id, {
-            live_exchange_rates: newStatus,
+            live_exchange_rates: apiStatus,
           });
           setIsUpdate(true);
           notifySuccess(res.message);
         }
-      }
-
-      if (location.pathname === "/attributes") {
+      } else if (location.pathname === "/attributes") {
         const res = await AttributeServices.updateStatus(id, {
-          status: newStatus,
+          status: apiStatus,
         });
         setIsUpdate(true);
         notifySuccess(res.message);
-      }
-
-      if (
-        location.pathname === `/attributes/${location.pathname.split("/")[2]}`
-      ) {
+      } else if (location.pathname.startsWith("/attributes/")) {
         const res = await AttributeServices.updateChildStatus(id, {
-          status: newStatus,
+          status: apiStatus,
         });
         setIsUpdate(true);
         notifySuccess(res.message);
-      }
-
-      if (location.pathname === "/coupons") {
-        // console.log('coupns',id)
+      } else if (location.pathname === "/coupons") {
         const res = await CouponServices.updateStatus(id, {
-          status: newStatus,
+          status: apiStatus,
         });
         setIsUpdate(true);
         notifySuccess(res.message);
-      }
-
-      if (location.pathname === "/our-staff") {
-        // console.log('coupns',id)
-        const res = await CouponServices.updateStaffStatus(id, {
-          status: newStatus,
-        });
+      } else if (location.pathname === "/our-staff") {
+        await AdminServices.updateStaffStatus(id, uiStatus);
         setIsUpdate(true);
-        notifySuccess(res.message);
+        notifySuccess("Statut du membre du staff mis à jour");
       }
     } catch (err) {
-      setOptimisticStatus(status);
-      console.error("Error changing status:", err);
-      notifyError(err ? err?.response?.data?.message : err?.message);
+      setIsActive(previousState);
+      notifyError(err?.response?.data?.message || err?.message);
     } finally {
       setIsLoading(false);
     }
@@ -117,9 +105,10 @@ const ShowHideButton = ({ id, status, category, currencyStatusName }) => {
 
   return (
     <Switch
-      onChange={() => handleChangeStatus(id)}
-      checked={optimisticStatus === "ACTIVE" ? true : false}
+      onChange={handleChangeStatus}
+      checked={isActive}
       className={`react-switch md:ml-0 ${isLoading ? "opacity-50" : ""}`}
+      disabled={isLoading}
       uncheckedIcon={
         <div
           style={{

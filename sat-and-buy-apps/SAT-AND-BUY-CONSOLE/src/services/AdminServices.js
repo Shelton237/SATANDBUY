@@ -49,7 +49,17 @@ const AdminServices = {
 
   deleteStaff(id) {
     return http.delete(`/admin/${id}`);
-  }
+  },
+
+  getDriverAvailability(id, { date, orderId } = {}) {
+    const params = new URLSearchParams();
+    if (date) params.append("date", date);
+    if (orderId) params.append("orderId", orderId);
+    const query = params.toString();
+    return http.get(
+      `/admin/${id}/availability${query ? `?${query}` : ""}`
+    );
+  },
 };
 
 export default AdminServices;

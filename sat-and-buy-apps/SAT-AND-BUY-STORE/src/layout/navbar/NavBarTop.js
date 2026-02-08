@@ -5,26 +5,38 @@ import Cookies from "js-cookie";
 import dynamic from "next/dynamic";
 import { IoLockOpenOutline } from "react-icons/io5";
 import { FiPhoneCall, FiUser } from "react-icons/fi";
-import { signOut } from "next-auth/react";
 import { jwtDecode } from "jwt-decode";
-import { useEffect } from "react";
+import { useContext, useEffect } from "react";
 
 //internal import
 import { getUserSession } from "@lib/auth";
 import useGetSetting from "@hooks/useGetSetting";
 import useUtilsFunction from "@hooks/useUtilsFunction";
+import { UserContext } from "@context/UserContext";
+import { clearUserSession } from "@lib/auth";
 
 const NavBarTop = () => {
   const userInfo = getUserSession();
   const router = useRouter();
+  const { dispatch } = useContext(UserContext);
 
   const { storeCustomizationSetting } = useGetSetting();
   const { showingTranslateValue } = useUtilsFunction();
 
-  const handleLogOut = () => {
-    signOut();
+  const redirectToHome = async () => {
+    try {
+      await router.replace("/");
+    } catch (err) {
+      if (err?.cancelled) return;
+      window.location.href = "/";
+    }
+  };
+
+  const handleLogOut = async () => {
+    clearUserSession();
+    dispatch({ type: "USER_LOGOUT" });
     Cookies.remove("couponInfo");
-    router.push("/");
+    await redirectToHome();
   };
 
   useEffect(() => {

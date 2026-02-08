@@ -78,6 +78,11 @@ const userSidebar = [
     icon: FiList,
   },
   {
+    title: "Order Tracking",
+    href: "/user/order-tracking",
+    icon: FiTruck,
+  },
+  {
     title: "Update Profile",
     href: "/user/update-profile",
     icon: FiSettings,
@@ -170,7 +175,7 @@ const contactData = [
     title: "contact-page-box1-title",
     info: "contact-page-box1-info",
     icon: FiMail,
-    contact: "kachabazar@gmail.com",
+    contact: "satandbuy@gmail.com",
     className: "bg-emerald-100",
   },
   {

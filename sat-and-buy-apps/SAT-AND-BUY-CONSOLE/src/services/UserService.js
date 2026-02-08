@@ -1,5 +1,6 @@
 // services/UserService.js
 import HttpService from "@/services/httpService";
+import { DEFAULT_DRIVER_SLOTS } from "@/constants/delivery";
 
 const API_BASE_URL = import.meta.env.VITE_APP_API_BASE_URL;
 
@@ -28,7 +29,10 @@ const mapAdminToUser = (admin = {}) => {
     status: admin.status || "Active",
     image: admin.image || "",
     createdTimestamp: admin.createdAt || admin.joiningData || null,
-    joiningDate: admin.joiningData || admin.createdAt || null
+    joiningDate: admin.joiningData || admin.createdAt || null,
+    availabilitySlots: Array.isArray(admin.availabilitySlots) && admin.availabilitySlots.length
+      ? admin.availabilitySlots
+      : DEFAULT_DRIVER_SLOTS,
   };
 };
 

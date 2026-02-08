@@ -26,6 +26,7 @@ const Navbar = () => {
   const userInfo = getUserSession();
 
   const { storeCustomizationSetting } = useGetSetting();
+  const LOGO_SRC = "/logo/logo-text.png";
 
   // console.log("storeCustomizationSetting", storeCustomizationSetting);
 
@@ -65,10 +66,7 @@ const Navbar = () => {
                   sizes="100vw"
                   className="w-full h-auto"
                   priority
-                  src={
-                    storeCustomizationSetting?.navbar?.logo ||
-                    "/logo/logo-light.svg"
-                  }
+                  src={LOGO_SRC}
                   alt="logo"
                 />
               </div>

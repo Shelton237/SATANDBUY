@@ -8,7 +8,7 @@ const admins = [
     email: "dorothy@gmail.com",
     password: bcrypt.hashSync("12345678"),
     phone: "708-628-3122",
-    role: "Security Guard",
+    role: "Trieur",
     joiningData: new Date(),
   },
   {
@@ -19,7 +19,7 @@ const admins = [
     email: "alice@gmail.com",
     password: bcrypt.hashSync("12345678"),
     phone: "708-488-9728",
-    role: "Driver",
+    role: "Vendeur",
     joiningData: new Date(),
   },
   {
@@ -30,7 +30,7 @@ const admins = [
     email: "corrie@gmail.com",
     password: bcrypt.hashSync("12345678"),
     phone: "914-623-6873",
-    role: "Accountant",
+    role: "Trieur",
     joiningData: new Date(),
   },
   {
@@ -41,7 +41,7 @@ const admins = [
     email: "shawn@gmail.com",
     password: bcrypt.hashSync("12345678"),
     phone: "949-202-2913",
-    role: "Manager",
+    role: "Vendeur",
     joiningData: new Date(),
   },
   {
@@ -52,8 +52,20 @@ const admins = [
     email: "stacey@gmail.com",
     password: bcrypt.hashSync("12345678"),
     phone: "616-738-0407",
-    role: "CEO",
+    role: "Admin",
     joiningData: new Date(),
+  },
+  {
+    name: {
+      en: "Idriss K. Mbeki",
+    },
+    image: "https://i.ibb.co/R3FwZdb/team-driver.jpg",
+    email: "livreur@satandbuy.com",
+    password: bcrypt.hashSync("12345678"),
+    phone: "+237-690-000-111",
+    role: "Livreur",
+    joiningData: new Date(),
+    availabilitySlots: ["08:00 - 10:00", "12:00 - 14:00", "16:00 - 18:00"],
   },
   {
     name: {

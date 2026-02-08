@@ -6,6 +6,11 @@ const {
   getOrderCustomer,
   updateOrder,
   deleteOrder,
+  startSorting,
+  completeSorting,
+  updateSortingItem,
+  updateDeliveryPlan,
+  getOrdersBoard,
   bestSellerProductChart,
   getDashboardOrders,
   getDashboardRecentOrder,
@@ -30,6 +35,7 @@ router.get("/dashboard-amount", getDashboardAmount);
 
 // chart data for product
 router.get("/best-seller/chart", bestSellerProductChart);
+router.get("/board", getOrdersBoard);
 
 //get all order by a user
 router.get("/customer/:id", getOrderCustomer);
@@ -39,6 +45,11 @@ router.get("/:id", getOrderById);
 
 //update a order
 router.put("/:id", updateOrder);
+
+router.put("/:id/sorting/start", startSorting);
+router.put("/:id/sorting/complete", completeSorting);
+router.put("/:id/sorting/items/:itemId", updateSortingItem);
+router.put("/:id/delivery-plan", updateDeliveryPlan);
 
 //delete a order
 router.delete("/:id", deleteOrder);

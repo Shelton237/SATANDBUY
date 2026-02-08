@@ -5,12 +5,39 @@ dayjs.extend(utc);
 const jwt = require("jsonwebtoken");
 const { signInToken, tokenForVerify, sendEmail } = require("../config/auth");
 const Admin = require("../models/Admin");
+const { STAFF_ROLES } = require("../constants/roles");
+const { DEFAULT_DRIVER_SLOTS } = require("../constants/delivery");
+const {
+  normalizeDateOnly,
+  getTakenSlotsForDriver,
+} = require("../lib/delivery/driverBooking");
 
 const sanitizeAdmin = (admin) => {
   if (!admin) return admin;
   const plain = admin.toObject ? admin.toObject() : { ...admin };
   delete plain.password;
   return plain;
+};
+
+const normalizeSlots = (slots = []) =>
+  Array.isArray(slots)
+    ? slots
+        .map((slot) => (typeof slot === "string" ? slot.trim() : ""))
+        .filter(Boolean)
+    : [];
+
+const resolveDriverSlots = (incomingSlots, role, currentSlots = []) => {
+  if (role !== "Livreur") {
+    return [];
+  }
+  const normalized = normalizeSlots(incomingSlots);
+  if (normalized.length) {
+    return normalized;
+  }
+  if (Array.isArray(currentSlots) && currentSlots.length) {
+    return currentSlots;
+  }
+  return [...DEFAULT_DRIVER_SLOTS];
 };
 
 const registerAdmin = async (req, res) => {
@@ -21,11 +48,16 @@ const registerAdmin = async (req, res) => {
         message: "This Email already Added!",
       });
     } else {
+      const normalizedSlots = resolveDriverSlots(
+        req.body.availabilitySlots,
+        req.body.role
+      );
       const newStaff = new Admin({
         name: req.body.name,
         email: req.body.email,
         role: req.body.role,
         password: bcrypt.hashSync(req.body.password),
+        availabilitySlots: normalizedSlots,
       });
       const staff = await newStaff.save();
       const token = signInToken(staff);
@@ -49,6 +81,12 @@ const loginAdmin = async (req, res) => {
   try {
     const admin = await Admin.findOne({ email: req.body.email });
     if (admin && bcrypt.compareSync(req.body.password, admin.password)) {
+      if (!STAFF_ROLES.includes(admin.role)) {
+        return res.status(403).send({
+          message:
+            "Access denied: this user is not authorized to use the admin console. Please use the client portal.",
+        });
+      }
       const token = signInToken(admin);
       res.send({
         token,
@@ -57,6 +95,7 @@ const loginAdmin = async (req, res) => {
         phone: admin.phone,
         email: admin.email,
         image: admin.image,
+        role: admin.role,
       });
     } else {
       res.status(401).send({
@@ -134,6 +173,10 @@ const addStaff = async (req, res) => {
         message: "This Email already Added!",
       });
     } else {
+      const normalizedSlots = resolveDriverSlots(
+        req.body.availabilitySlots,
+        req.body.role
+      );
       const newStaff = new Admin({
         name: { ...req.body.name },
         email: req.body.email,
@@ -142,6 +185,7 @@ const addStaff = async (req, res) => {
         joiningDate: req.body.joiningDate,
         role: req.body.role,
         image: req.body.image,
+        availabilitySlots: normalizedSlots,
       });
       const savedStaff = await newStaff.save();
       res.status(201).send({
@@ -190,6 +234,11 @@ const updateStaff = async (req, res) => {
       admin.phone = req.body.phone;
       admin.role = req.body.role;
       admin.joiningData = req.body.joiningDate;
+      admin.availabilitySlots = resolveDriverSlots(
+        req.body.availabilitySlots,
+        admin.role,
+        admin.availabilitySlots
+      );
       // admin.password =
       //   req.body.password !== undefined
       //     ? bcrypt.hashSync(req.body.password)
@@ -253,6 +302,54 @@ const updatedStatus = async (req, res) => {
   }
 };
 
+const getDriverAvailability = async (req, res) => {
+  try {
+    const driver = await Admin.findById(req.params.id);
+    if (!driver || driver.role !== "Livreur") {
+      return res.status(404).send({ message: "Livreur introuvable." });
+    }
+
+    const { date, orderId } = req.query;
+    if (!date) {
+      return res
+        .status(400)
+        .send({ message: "Le paramètre date est requis." });
+    }
+
+    const normalizedDate = normalizeDateOnly(date);
+    if (!normalizedDate) {
+      return res.status(400).send({ message: "Date invalide." });
+    }
+
+    const baseSlots = resolveDriverSlots(
+      driver.availabilitySlots,
+      driver.role,
+      driver.availabilitySlots
+    );
+
+    const taken = await getTakenSlotsForDriver({
+      driverId: driver._id,
+      date: normalizedDate,
+      excludeOrderId: orderId,
+    });
+    const takenSet = new Set(taken.map((booking) => booking.slot));
+    const available = baseSlots.filter((slot) => !takenSet.has(slot));
+
+    res.send({
+      slots: available,
+      baseSlots,
+      taken: taken.map((booking) => ({
+        slot: booking.slot,
+        order: booking.order,
+        startMinutes: booking.startMinutes,
+        endMinutes: booking.endMinutes,
+      })),
+    });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+};
+
 module.exports = {
   registerAdmin,
   loginAdmin,
@@ -264,4 +361,5 @@ module.exports = {
   updateStaff,
   deleteStaff,
   updatedStatus,
+  getDriverAvailability,
 };

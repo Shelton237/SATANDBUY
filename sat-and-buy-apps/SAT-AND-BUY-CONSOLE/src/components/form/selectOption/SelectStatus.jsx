@@ -1,17 +1,49 @@
-import React, { useContext } from "react";
+import React, { useContext, useMemo } from "react";
 import { Select } from "@windmill/react-ui";
 
 //internal import
 import OrderServices from "@/services/OrderServices";
 import { notifySuccess, notifyError } from "@/utils/toast";
 import { SidebarContext } from "@/context/SidebarContext";
+import { AdminContext } from "@/context/AdminContext";
+
+const STATUS_OPTIONS = [
+  { value: "Pending", label: "Pending" },
+  { value: "Sorting", label: "Sorting" },
+  { value: "ReadyForDelivery", label: "Ready For Delivery" },
+  { value: "Processing", label: "Processing" },
+  { value: "Delivered", label: "Delivered" },
+  { value: "Cancel", label: "Cancel" },
+];
+
+const ROLE_STATUS_MAP = {
+  Trieur: ["Pending", "Sorting", "ReadyForDelivery", "Processing"],
+  Vendeur: ["Processing", "ReadyForDelivery", "Delivered", "Cancel"],
+};
 
 const SelectStatus = ({ id, order }) => {
-  // console.log('id',id ,'order',order)
   const { setIsUpdate } = useContext(SidebarContext);
-  const handleChangeStatus = (id, status) => {
-    // return notifyError("This option disabled for this option!");
-    OrderServices.updateOrder(id, { status: status })
+  const { authData } = useContext(AdminContext);
+  const role = authData?.user?.role || "Admin";
+
+  const allowedValues = useMemo(() => {
+    if (role === "Admin") return STATUS_OPTIONS.map((opt) => opt.value);
+    return ROLE_STATUS_MAP[role] || ["Pending", "Processing", "Delivered", "Cancel"];
+  }, [role]);
+
+  const allowedOptions = useMemo(
+    () => STATUS_OPTIONS.filter((opt) => allowedValues.includes(opt.value)),
+    [allowedValues]
+  );
+
+  const allowedSet = useMemo(() => new Set(allowedValues), [allowedValues]);
+
+  const handleChangeStatus = (orderId, status) => {
+    if (!allowedSet.has(status)) {
+      notifyError("Ce rôle ne peut pas appliquer ce statut.");
+      return;
+    }
+    OrderServices.updateOrder(orderId, { status })
       .then((res) => {
         notifySuccess(res.message);
         setIsUpdate(true);
@@ -19,32 +51,29 @@ const SelectStatus = ({ id, order }) => {
       .catch((err) => notifyError(err.message));
   };
 
+  if (allowedOptions.length === 0) {
+    return (
+      <span className="text-xs text-gray-400 dark:text-gray-500">
+        Aucune action disponible
+      </span>
+    );
+  }
+
   return (
-    <>
-      <Select
-        onChange={(e) => handleChangeStatus(id, e.target.value)}
-        className="h-8"
-      >
-        <option value="status" defaultValue hidden>
-          {order?.status}
+    <Select
+      onChange={(e) => handleChangeStatus(id, e.target.value)}
+      className="h-8"
+      defaultValue=""
+    >
+      <option value="" hidden>
+        {order?.status}
+      </option>
+      {allowedOptions.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
         </option>
-        <option defaultValue={order?.status === "Delivered"} value="Delivered">
-          Delivered
-        </option>
-        <option defaultValue={order?.status === "Pending"} value="Pending">
-          Pending
-        </option>
-        <option
-          defaultValue={order?.status === "Processing"}
-          value="Processing"
-        >
-          Processing
-        </option>
-        <option defaultValue={order?.status === "Cancel"} value="Cancel">
-          Cancel
-        </option>
-      </Select>
-    </>
+      ))}
+    </Select>
   );
 };
 

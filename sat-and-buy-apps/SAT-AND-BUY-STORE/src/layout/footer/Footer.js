@@ -22,6 +22,7 @@ const Footer = () => {
 
   const { showingTranslateValue } = useUtilsFunction();
   const { loading, storeCustomizationSetting } = useGetSetting();
+  const LOGO_SRC = "/logo/logo-text.png";
 
   return (
     <div className="pb-16 lg:pb-0 xl:pb-0 bg-white">
@@ -299,10 +300,7 @@ const Footer = () => {
                     height="0"
                     sizes="100vw"
                     className="w-full h-auto"
-                    src={
-                      storeCustomizationSetting?.footer?.block4_logo ||
-                      "/logo/logo-color.svg"
-                    }
+                    src={LOGO_SRC}
                     alt="logo"
                   />
                 </div>
@@ -436,7 +434,7 @@ const Footer = () => {
                     <Image
                       width={274}
                       height={85}
-                      className="w-full"
+                      className="w-full h-auto"
                       src={
                         storeCustomizationSetting?.footer?.payment_method_img ||
                         "/payment-method/payment-logo.png"

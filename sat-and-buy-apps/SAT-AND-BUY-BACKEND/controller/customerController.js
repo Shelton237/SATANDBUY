@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const Customer = require("../models/Customer");
 const { signInToken, tokenForVerify } = require("../config/auth");
 const { sendEmail } = require("../lib/email-sender/sender");
+const { CLIENT_ROLE } = require("../constants/roles");
 const {
   customerRegisterBody,
 } = require("../lib/email-sender/templates/register");
@@ -50,6 +51,7 @@ const registerCustomer = async (req, res) => {
       _id: isAdded._id,
       name: isAdded.name,
       email: isAdded.email,
+      role: isAdded.role || CLIENT_ROLE,
       message: "Email Already Verified!",
     });
   }
@@ -65,6 +67,7 @@ const registerCustomer = async (req, res) => {
           name,
           email,
           password: bcrypt.hashSync(password),
+          role: CLIENT_ROLE,
         });
         newUser.save();
         const token = signInToken(newUser);
@@ -73,10 +76,43 @@ const registerCustomer = async (req, res) => {
           _id: newUser._id,
           name: newUser.name,
           email: newUser.email,
+          role: CLIENT_ROLE,
           message: "Email Verified, Please Login Now!",
         });
       }
     });
+  }
+};
+
+const registerCustomerDirect = async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    if (!name || !email || !password) {
+      return res.status(400).send({ message: "Name, email and password are required." });
+    }
+    const existing = await Customer.findOne({ email });
+    if (existing) {
+      return res.status(409).send({ message: "This email is already registered!" });
+    }
+
+    const newUser = await Customer.create({
+      name,
+      email,
+      password: bcrypt.hashSync(password),
+      role: CLIENT_ROLE,
+    });
+
+    const token = signInToken(newUser);
+    res.send({
+      token,
+      _id: newUser._id,
+      name: newUser.name,
+      email: newUser.email,
+      role: CLIENT_ROLE,
+      message: "Account created successfully!",
+    });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
   }
 };
 
@@ -114,6 +150,7 @@ const loginCustomer = async (req, res) => {
         address: customer.address,
         phone: customer.phone,
         image: customer.image,
+        role: customer.role || CLIENT_ROLE,
       });
     } else {
       res.status(401).send({
@@ -166,6 +203,7 @@ const resetPassword = async (req, res) => {
         });
       } else {
         customer.password = bcrypt.hashSync(req.body.newPassword);
+        customer.role = customer.role || CLIENT_ROLE;
         customer.save();
         res.send({
           message: "Your password change successful, you can login now!",
@@ -189,6 +227,7 @@ const changePassword = async (req, res) => {
       bcrypt.compareSync(req.body.currentPassword, customer.password)
     ) {
       customer.password = bcrypt.hashSync(req.body.newPassword);
+      customer.role = customer.role || CLIENT_ROLE;
       await customer.save();
       res.send({
         message: "Your password change successfully!",
@@ -222,12 +261,14 @@ const signUpWithProvider = async (req, res) => {
         address: isAdded.address,
         phone: isAdded.phone,
         image: isAdded.image,
+        role: isAdded.role || CLIENT_ROLE,
       });
     } else {
       const newUser = new Customer({
         name: user.name,
         email: user.email,
         image: user.picture,
+        role: CLIENT_ROLE,
       });
 
       const signUpCustomer = await newUser.save();
@@ -238,6 +279,7 @@ const signUpWithProvider = async (req, res) => {
         name: signUpCustomer.name,
         email: signUpCustomer.email,
         image: signUpCustomer.image,
+        role: CLIENT_ROLE,
       });
     }
   } catch (err) {
@@ -262,12 +304,14 @@ const signUpWithOauthProvider = async (req, res) => {
         address: isAdded.address,
         phone: isAdded.phone,
         image: isAdded.image,
+        role: isAdded.role || CLIENT_ROLE,
       });
     } else {
       const newUser = new Customer({
         name: req.body.name,
         email: req.body.email,
         image: req.body.image,
+        role: CLIENT_ROLE,
       });
 
       const signUpCustomer = await newUser.save();
@@ -278,6 +322,7 @@ const signUpWithOauthProvider = async (req, res) => {
         name: signUpCustomer.name,
         email: signUpCustomer.email,
         image: signUpCustomer.image,
+        role: CLIENT_ROLE,
       });
     }
   } catch (err) {
@@ -447,6 +492,9 @@ const updateCustomer = async (req, res) => {
     customer.phone = phone;
     customer.image = image;
 
+    // Always enforce client role
+    customer.role = CLIENT_ROLE;
+
     // Save the updated customer
     const updatedUser = await customer.save();
 
@@ -462,6 +510,7 @@ const updateCustomer = async (req, res) => {
       address: updatedUser.address,
       phone: updatedUser.phone,
       image: updatedUser.image,
+      role: updatedUser.role || CLIENT_ROLE,
       message: "Customer updated successfully!",
     });
   } catch (err) {
@@ -488,6 +537,7 @@ const deleteCustomer = (req, res) => {
 module.exports = {
   loginCustomer,
   registerCustomer,
+  registerCustomerDirect,
   addAllCustomers,
   signUpWithProvider,
   signUpWithOauthProvider,

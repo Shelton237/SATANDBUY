@@ -1,26 +1,69 @@
-import React, { useContext, useState } from "react";
-import { NavLink, Route } from "react-router-dom";
-import Cookies from "js-cookie";
+import React, { useCallback, useContext, useMemo } from "react";
+import { NavLink, Route, useHistory } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Button, WindmillContext } from "@windmill/react-ui";
+import { Button } from "@windmill/react-ui";
 import { IoLogOutOutline } from "react-icons/io5";
 
 //internal import
-import sidebar from "@/routes/sidebar";
+import sidebarConfig from "@/routes/sidebar";
 // import SidebarSubMenu from "SidebarSubMenu";
 import logo from "@/assets/img/logo/logo-text.png";
 import { AdminContext } from "@/context/AdminContext";
 import SidebarSubMenu from "@/components/sidebar/SidebarSubMenu";
+import AuthService from "@/services/AuthService";
+import { notifyError } from "@/utils/toast";
+import { STAFF_ROLE_VALUES } from "@/constants/roles";
 
 const SidebarContent = () => {
   const { t } = useTranslation();
-  const { mode } = useContext(WindmillContext);
-  const { dispatch } = useContext(AdminContext);
+  const history = useHistory();
+  const { dispatch, authData } = useContext(AdminContext);
 
-  const handleLogOut = () => {
-    dispatch({ type: "USER_LOGOUT" });
-    Cookies.remove("authData");
+  const handleLogOut = async () => {
+    try {
+      await AuthService.logout();
+      dispatch({ type: "USER_LOGOUT" });
+      history.replace("/login");
+    } catch (err) {
+      notifyError(err?.response?.data?.message || err?.message);
+    }
   };
+
+  const currentRole = useMemo(() => {
+    const role = authData?.user?.role || authData?.role;
+    if (role && STAFF_ROLE_VALUES.includes(role)) {
+      return role;
+    }
+    return "Admin";
+  }, [authData]);
+
+  const filterMenuItems = useCallback((items) => {
+    const role = currentRole;
+    return items.reduce((acc, item) => {
+      const allowedRoles =
+        item.allowedRoles && item.allowedRoles.length
+          ? item.allowedRoles
+          : STAFF_ROLE_VALUES;
+      if (!allowedRoles.includes(role)) {
+        return acc;
+      }
+      if (item.routes) {
+        const childRoutes = filterMenuItems(item.routes);
+        if (childRoutes.length === 0) {
+          return acc;
+        }
+        acc.push({ ...item, routes: childRoutes });
+      } else {
+        acc.push(item);
+      }
+      return acc;
+    }, []);
+  }, [currentRole]);
+
+  const sidebarRoutes = useMemo(
+    () => filterMenuItems(sidebarConfig),
+    [filterMenuItems]
+  );
 
   return (
     <div className="py-4 text-gray-500 dark:text-gray-400 ">
@@ -31,7 +74,7 @@ const SidebarContent = () => {
       </div>
 
       <ul className="mt-8">
-        {sidebar.map((route) =>
+        {sidebarRoutes.map((route) =>
           route.routes ? (
             <SidebarSubMenu route={route} key={route.name} />
           ) : (

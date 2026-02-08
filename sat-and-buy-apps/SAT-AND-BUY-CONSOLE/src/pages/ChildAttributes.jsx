@@ -9,9 +9,10 @@ import {
   TableFooter,
   TableHeader,
 } from "@windmill/react-ui";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useMemo, useState } from "react";
 import { FiChevronRight, FiEdit, FiPlus, FiTrash2 } from "react-icons/fi";
 import { Link, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 //internal import
 import ChildAttributeTable from "@/components/attribute/ChildAttributeTable";
@@ -31,14 +32,73 @@ import AttributeServices from "@/services/AttributeServices";
 import useUtilsFunction from "@/hooks/useUtilsFunction";
 import AnimatedContent from "@/components/common/AnimatedContent";
 
+const ATTRIBUTE_KEYWORDS = {
+  sizes: ["size", "sizes", "taille", "tailles"],
+  colors: ["color", "colors", "couleur", "couleurs"],
+  brands: ["brand", "brands", "marque", "marques"],
+};
+
+const slugify = (value = "") =>
+  value
+    .toString()
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-");
+
+const OBJECT_ID_REGEX = /^[a-f\d]{24}$/i;
+
 const ChildAttributes = () => {
   let { code } = useParams();
-
+  const { t } = useTranslation();
   const { handleDeleteMany, allId, serviceId, handleUpdateMany } = useToggleDrawer();
   const { toggleDrawer, lang } = useContext(SidebarContext);
-  const result = useAsync(() => AttributeServices.getAll({}, code));
-  const { data, loading, error } = result;
+  const isObjectId = useMemo(() => OBJECT_ID_REGEX.test(code || ""), [code]);
+
+  const fetchAttributePayload = () => {
+    if (isObjectId) {
+      return AttributeServices.getById(code).then((attribute) => ({
+        attribute,
+        data: attribute?.variants || [],
+        variants: attribute?.variants || [],
+      }));
+    }
+    return AttributeServices.getAll({}, code);
+  };
+
+  const { data: attributeResponse, loading, error } = useAsync(fetchAttributePayload);
+  const attributeMeta = attributeResponse?.attribute;
+  const attributeId =
+    attributeMeta?.id || attributeMeta?._id || (isObjectId ? code : null);
+  const variants = Array.isArray(attributeResponse?.data)
+    ? attributeResponse.data
+    : [];
   const { showingTranslateValue } = useUtilsFunction();
+  const resolvedTitle = showingTranslateValue(attributeMeta?.title);
+  const resolvedName = showingTranslateValue(attributeMeta?.name);
+  const attributeLabel = resolvedTitle || resolvedName || code;
+
+  const attributeSlug = useMemo(() => {
+    if (!attributeMeta) return code;
+    const candidates = [
+      attributeMeta.slug,
+      attributeMeta.code,
+      attributeMeta.id,
+      attributeMeta._id,
+      resolvedTitle,
+      resolvedName,
+    ]
+      .filter(Boolean)
+      .map((candidate) => slugify(candidate));
+
+    for (const [key, keywords] of Object.entries(ATTRIBUTE_KEYWORDS)) {
+      if (candidates.some((candidate) => keywords.includes(candidate))) {
+        return key;
+      }
+    }
+    return code;
+  }, [attributeMeta, code, resolvedTitle, resolvedName]);
 
   const {
     totalResults,
@@ -46,16 +106,15 @@ const ChildAttributes = () => {
     dataTable,
     serviceData,
     handleChangePage,
-  } = useFilter(data?.data || []);
+  } = useFilter(variants);
 
   // react hook
   const [isCheckAll, setIsCheckAll] = useState(false);
   const [isCheck, setIsCheck] = useState([]);
-  const [attributeData, setAttributeData] = useState([]);
 
   const handleSelectAll = () => {
     setIsCheckAll(!isCheckAll);
-    setIsCheck(data?.variants?.map((value) => value._id));
+    setIsCheck(variants?.map((value) => value.id || value._id));
     if (isCheckAll) {
       setIsCheck([]);
     }
@@ -63,7 +122,10 @@ const ChildAttributes = () => {
 
   return (
     <>
-      <PageTitle>Attributes Values</PageTitle>
+      <PageTitle>
+        {t("AttributeValues")}
+        {attributeLabel ? ` — ${attributeLabel}` : ""}
+      </PageTitle>
       {/* 
       <DeleteModal
         ids={allId}
@@ -78,16 +140,22 @@ const ChildAttributes = () => {
         childId={id}
       /> */}
 
-      <MainDrawer>
-        <AttributeChildDrawer id={serviceId} code={code}/>
-      </MainDrawer>
+      {attributeId && (
+        <MainDrawer>
+          <AttributeChildDrawer
+            id={serviceId}
+            attributeId={attributeId}
+            attributeSlug={attributeSlug}
+          />
+        </MainDrawer>
+      )}
 
       <AnimatedContent>
         <div className="flex items-center pb-4">
           <ol className="flex items-center w-full overflow-hidden font-serif">
             <li className="text-sm pr-1 transition duration-200 ease-in cursor-pointer hover:text-emerald-500 font-semibold">
               <Link className="text-blue-700" to={`/attributes`}>
-                Attributes
+                {t("Attributes")}
               </Link>
             </li>
 
@@ -98,7 +166,7 @@ const ChildAttributes = () => {
               </li>
 
               <li className="text-sm pl-1 font-semibold dark:text-gray-400">
-                {!loading && code}
+                {!loading && attributeLabel}
               </li>
             </span>
           </ol>
@@ -107,11 +175,15 @@ const ChildAttributes = () => {
         <Card className="min-w-0 shadow-xs overflow-hidden bg-white dark:bg-gray-800 mb-5">
           <CardBody className="py-3 grid gap-4 justify-end lg:gap-4 xl:gap-4 md:flex xl:flex">
             <div className="flex justify-end items-end">
-              <Button onClick={toggleDrawer} className="rounded-md h-12">
+              <Button
+                onClick={toggleDrawer}
+                className="rounded-md h-12"
+                disabled={!attributeId}
+              >
                 <span className="mr-3">
                   <FiPlus />
                 </span>
-                Add Value
+                {t("AddValue")}
               </Button>
             </div>
 
@@ -122,7 +194,7 @@ const ChildAttributes = () => {
                 className="w-full rounded-md h-12"
               >
                 <FiEdit />
-                Bulk Action
+                <span className="ml-2">{t("BulkAction")}</span>
               </Button>
             </div>
 
@@ -134,7 +206,7 @@ const ChildAttributes = () => {
               <span className="mr-3">
                 <FiTrash2 />
               </span>
-              Delete
+              {t("Delete")}
             </Button>
           </CardBody>
         </Card>
@@ -158,31 +230,31 @@ const ChildAttributes = () => {
                     isChecked={isCheckAll}
                   />
                 </TableCell>
-                <TableCell>Id</TableCell>
-                <TableCell>Name</TableCell>
-                {code === 'colors' && (
-                  <TableCell>Hex Code</TableCell>
+                <TableCell>{t("Name")}</TableCell>
+                {attributeSlug === "colors" && (
+                  <TableCell>{t("HexCode")}</TableCell>
                 )}
 
-                {code === 'brands' && (
+                {attributeSlug === "brands" && (
                   <>
-                    <TableCell>Description</TableCell>
-                    <TableCell>Logo</TableCell>
+                    <TableCell>{t("Description")}</TableCell>
+                    <TableCell>{t("Logo")}</TableCell>
                   </>
                 )}
 
-                <TableCell className="text-right">Actions</TableCell>
+                <TableCell className="text-right">{t("Actions")}</TableCell>
               </tr>
             </TableHeader>
 
             <ChildAttributeTable
-              att={data}
+              att={attributeMeta}
               lang={lang}
               loading={loading}
               isCheck={isCheck}
               setIsCheck={setIsCheck}
               childAttributes={dataTable}
-              code={code}
+              attributeId={attributeId}
+              attributeSlug={attributeSlug}
             />
           </Table>
           <TableFooter>
@@ -190,12 +262,12 @@ const ChildAttributes = () => {
               totalResults={totalResults}
               resultsPerPage={resultsPerPage}
               onChange={handleChangePage}
-              label="Table navigation"
+              label={t("TableNavigation") || "Table navigation"}
             />
           </TableFooter>
         </TableContainer>
       ) : (
-        <NotFound title="Sorry, There are no attributes right now." />
+        <NotFound title={t("AttributeValues")} />
       )}
     </>
   );

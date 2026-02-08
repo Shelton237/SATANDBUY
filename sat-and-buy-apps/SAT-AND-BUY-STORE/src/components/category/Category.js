@@ -29,7 +29,7 @@ const Category = () => {
               <Image
                 width={100}
                 height={38}
-                src="/logo/logo-color.svg"
+                src="/logo/logo-text.png"
                 alt="logo"
               />
             </Link>
@@ -57,12 +57,16 @@ const Category = () => {
           <Loading loading={loading} />
         ) : (
           <div className="relative grid gap-2 p-6">
-            {data[0]?.children?.map((category) => (
+            {(
+              (data[0]?.children && data[0].children.length > 0
+                ? data[0].children
+                : data) || []
+            ).map((category) => (
               <CategoryCard
                 key={category._id}
                 id={category._id}
                 icon={category.icon}
-                nested={category.children}
+                nested={category.children || []}
                 title={showingTranslateValue(category?.name)}
               />
             ))}

@@ -5,7 +5,7 @@ import { useDispatch } from "react-redux";
 
 // Create a single socket instance
 // const socket = io(process.env.NEXT_PUBLIC_API_SOCKET_URL);
-// const socket = io("https://kachabazar-backend-theta.vercel.app");
+// const socket = io("https://satandbuy-backend-theta.vercel.app");
 
 const useNotification = () => {
   const dispatch = useDispatch();

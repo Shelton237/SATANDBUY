@@ -10,6 +10,18 @@ const Setting = require("../models/Setting");
 
 const { handleProductQuantity } = require("../lib/stock-controller/others");
 const { formatAmountForStripe } = require("../lib/stripe/stripe");
+const {
+  releaseDriverSlotsByOrder,
+} = require("../lib/delivery/driverBooking");
+
+const CUSTOMER_BOARD_STATUSES = [
+  "Pending",
+  "Sorting",
+  "ReadyForDelivery",
+  "Processing",
+  "Delivered",
+  "Cancel",
+];
 
 const addOrder = async (req, res) => {
   // console.log("addOrder", req.body);
@@ -233,6 +245,76 @@ const getOrderById = async (req, res) => {
   }
 };
 
+const getCustomerOrderBoard = async (req, res) => {
+  try {
+    const limit = Math.min(Math.max(Number(req.query.limit) || 12, 1), 30);
+    const statuses = CUSTOMER_BOARD_STATUSES;
+    const board = {};
+
+    for (const status of statuses) {
+      const orders = await Order.find({
+        user: req.user._id,
+        status,
+      })
+        .sort({ updatedAt: -1 })
+        .limit(limit)
+        .select(
+          "_id invoice status total user_info sorting deliveryPlan updatedAt createdAt"
+        )
+        .lean();
+      board[status] = orders;
+    }
+
+    res.send({
+      statuses,
+      board,
+      limit,
+    });
+  } catch (err) {
+    res.status(500).send({
+      message: err.message,
+    });
+  }
+};
+
+const confirmOrderDelivery = async (req, res) => {
+  try {
+    const order = await Order.findOne({
+      _id: req.params.id,
+      user: req.user._id,
+    });
+
+    if (!order) {
+      return res.status(404).send({ message: "Commande introuvable." });
+    }
+
+    if (!["Processing", "ReadyForDelivery"].includes(order.status)) {
+      return res.status(400).send({
+        message:
+          "La commande ne peut être validée que lorsque la livraison est en cours.",
+      });
+    }
+
+    const plan = order.deliveryPlan || {};
+    plan.status = "Delivered";
+    plan.confirmedByCustomer = true;
+    plan.confirmedAt = new Date();
+    order.deliveryPlan = plan;
+    order.status = "Delivered";
+
+    await order.save();
+    await releaseDriverSlotsByOrder(order._id, "customer_confirmed");
+    res.send({
+      message: "Merci ! La livraison a été confirmée.",
+      order,
+    });
+  } catch (err) {
+    res.status(500).send({
+      message: err.message,
+    });
+  }
+};
+
 module.exports = {
   addOrder,
   getOrderById,
@@ -240,4 +322,6 @@ module.exports = {
   createPaymentIntent,
   createOrderByRazorPay,
   addRazorpayOrder,
+  getCustomerOrderBoard,
+  confirmOrderDelivery,
 };

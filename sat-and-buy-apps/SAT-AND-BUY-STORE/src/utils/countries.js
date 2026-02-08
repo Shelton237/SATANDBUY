@@ -1,5 +1,30 @@
 const countries = [
   {
+    name: "Cameroon",
+    cities: [
+      {
+        name: "Yaoundé",
+        areas: ["Nsimalen", "Biyem-Assi", "Nkolbisson", "Melen", "Nkolndongo"],
+      },
+      {
+        name: "Douala",
+        areas: ["Akwa", "Bonapriso", "Bonanjo", "Deido", "Bonamoussadi"],
+      },
+      {
+        name: "Bafoussam",
+        areas: ["Banengo", "Tamdja", "Djeleng", "Tchitchap", "Tougang"],
+      },
+      {
+        name: "Garoua",
+        areas: ["Plateau", "Roumdé Adjia", "Laindé", "Marouaré", "Poumpoumré"],
+      },
+      {
+        name: "Maroua",
+        areas: ["Domayo", "Dougoy", "Doualaré", "Founangue", "Pitoaré"],
+      },
+    ],
+  },
+  {
     name: "Bangladesh",
     cities: [
       {

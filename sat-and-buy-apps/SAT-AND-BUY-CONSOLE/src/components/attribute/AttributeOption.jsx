@@ -5,17 +5,20 @@ import useUtilsFunction from "@/hooks/useUtilsFunction";
 const AttributeOption = ({ id, attributes, values, setValues, resetRef }) => {
   const [attributeOptions, setAttributeOptions] = useState([]);
   const [selectionLimit, setSelectionLimit] = useState(null);
+  const attributeId = attributes?.id || attributes?._id;
 
   const { showingTranslateValue } = useUtilsFunction();
 
   const handleSelectValue = (v, el) => {
     // console.log("handleValue", v, el);
     if (el?.name === "All") {
-      const result = attributes?.variants.filter((att) => att._id !== "1");
+      const result = attributes?.variants.filter(
+        (att) => (att.id || att._id) !== "1"
+      );
 
       setValues({
         ...values,
-        [attributes._id]: result?.map((el) => el._id),
+        [attributeId]: result?.map((el) => el.id || el._id),
       });
 
       setSelectionLimit("1");
@@ -33,7 +36,7 @@ const AttributeOption = ({ id, attributes, values, setValues, resetRef }) => {
       const exceptAllData = v.filter((el) => el._id !== "1");
       setValues({
         ...values,
-        [attributes._id]: exceptAllData.map((el) => el._id),
+        [attributeId]: exceptAllData.map((el) => el.id || el._id),
       });
     }
   };
@@ -59,7 +62,7 @@ const AttributeOption = ({ id, attributes, values, setValues, resetRef }) => {
 
       setValues({
         ...values,
-        [attributes._id]: exceptAllData.map((el) => el._id),
+        [attributeId]: exceptAllData.map((el) => el.id || el._id),
       });
     }
   };

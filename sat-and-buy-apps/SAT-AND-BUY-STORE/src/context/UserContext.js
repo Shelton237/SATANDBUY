@@ -1,23 +1,35 @@
 import Cookies from "js-cookie";
-import { useSession } from "next-auth/react";
-import React, { createContext, useEffect, useReducer } from "react";
+import React, {
+  createContext,
+  useEffect,
+  useReducer,
+  useState,
+} from "react";
 
 //internal imports
 import { setToken } from "@services/httpServices";
 import LoadingForSession from "@components/preloader/LoadingForSession";
+import { getUserSession } from "@lib/auth";
 
 export const UserContext = createContext();
 
+const isBrowser = typeof window !== "undefined";
+
+const getCookieJSON = (key, fallbackValue) => {
+  if (!isBrowser) return fallbackValue;
+  const raw = Cookies.get(key);
+  if (!raw) return fallbackValue;
+  try {
+    return JSON.parse(raw);
+  } catch (err) {
+    return fallbackValue;
+  }
+};
+
 const initialState = {
-  userInfo: Cookies.get("userInfo")
-    ? JSON.parse(Cookies.get("userInfo"))
-    : null,
-  shippingAddress: Cookies.get("shippingAddress")
-    ? JSON.parse(Cookies.get("shippingAddress"))
-    : {},
-  couponInfo: Cookies.get("couponInfo")
-    ? JSON.parse(Cookies.get("couponInfo"))
-    : {},
+  userInfo: getUserSession(),
+  shippingAddress: getCookieJSON("shippingAddress", {}),
+  couponInfo: getCookieJSON("couponInfo", {}),
 };
 
 function reducer(state, action) {
@@ -41,18 +53,21 @@ function reducer(state, action) {
 
 export const UserProvider = ({ children }) => {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const { data: session, status } = useSession();
-  // const status = "loading";
+  const [bootstrapping, setBootstrapping] = useState(true);
 
   useEffect(() => {
-    if (status === "authenticated" && session?.user) {
-      setToken(session.user.token);
-    } else if (status === "unauthenticated") {
+    if (state.userInfo?.token) {
+      setToken(state.userInfo.token);
+    } else {
       setToken(null);
     }
-  }, [session, status]);
+  }, [state.userInfo]);
 
-  if (status === "loading") {
+  useEffect(() => {
+    setBootstrapping(false);
+  }, []);
+
+  if (bootstrapping) {
     return <LoadingForSession />;
   }
 

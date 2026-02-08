@@ -13,12 +13,14 @@ const settingSlice = createSlice({
       if (existsItem) {
         return {
           ...state,
-          settingItem: state.settingItem.map((x) => {
-            if (x.name === existsItem.name) {
-              return x;
-            }
-            return x;
-          }),
+          settingItem: state.settingItem.map((x) =>
+            x.name === existsItem.name
+              ? {
+                  ...x,
+                  ...action.payload,
+                }
+              : x
+          ),
         };
       } else {
         return {

@@ -74,10 +74,6 @@ const CategoryTable = ({
               />
             </TableCell>
 
-            <TableCell className="font-semibold uppercase text-xs">
-              {category?.id}
-            </TableCell>
-
             <TableCell>
               <div>
                 <i className={`fas ${category.icon} text-lg text-green-500`} />

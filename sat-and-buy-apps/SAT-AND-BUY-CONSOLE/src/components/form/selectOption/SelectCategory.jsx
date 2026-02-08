@@ -21,7 +21,7 @@ const SelectCategory = ({ setCategory }) => {
           {t("Category")}
         </option>
         {data?.map((cat) => (
-          <option key={cat._id} value={cat._id}>
+          <option key={cat.id || cat._id} value={cat.id || cat._id}>
             {showingTranslateValue(cat?.name)}
           </option>
         ))}

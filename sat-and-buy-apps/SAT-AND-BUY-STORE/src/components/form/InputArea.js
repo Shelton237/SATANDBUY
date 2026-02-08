@@ -12,7 +12,14 @@ const InputArea = ({
   autocomplete,
   placeholder,
   required = true,
+  rules = {},
 }) => {
+  const validationRules =
+    Object.keys(rules).length > 0
+      ? rules
+      : required
+      ? { required: `${label} is required!` }
+      : {};
   return (
     <>
       <Label label={label} />
@@ -25,9 +32,7 @@ const InputArea = ({
           </div>
         )}
         <input
-          {...register(`${name}`, {
-            required: required ? `${label} is required!` : false,
-          })}
+          {...register(`${name}`, validationRules)}
           type={type}
           name={name}
           readOnly={readOnly}

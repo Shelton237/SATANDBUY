@@ -9,7 +9,7 @@ import {
   View,
 } from "@react-pdf/renderer";
 import { useTranslation } from "react-i18next";
-import logoDark from "@/assets/img/logo/logo-color.png";
+import satBuyLogo from "@/assets/img/logo/logo-text.png";
 
 Font.register({
   family: "Open Sans",
@@ -344,8 +344,8 @@ const InvoiceForDownload = ({
                 }}
               >
                 <Image
-                  src={logoDark}
-                  alt="kachabazar"
+                  src={satBuyLogo}
+                  alt="Sat & Buy"
                   style={{
                     width: 90,
                     alignItems: "right",

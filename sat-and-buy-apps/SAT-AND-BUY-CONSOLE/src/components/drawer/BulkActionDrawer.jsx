@@ -6,6 +6,7 @@ import Tree from "rc-tree";
 import React, { useContext } from "react";
 import { Scrollbars } from "react-custom-scrollbars-2";
 import { FiX } from "react-icons/fi";
+import { useTranslation } from "react-i18next";
 
 //internal import
 
@@ -33,6 +34,7 @@ const BulkActionDrawer = ({
     useContext(SidebarContext);
 
   const { showingTranslateValue } = useUtilsFunction();
+  const { t } = useTranslation();
 
   const {
     tag,
@@ -407,8 +409,9 @@ const BulkActionDrawer = ({
                           <option value="" defaultValue hidden>
                             Select type
                           </option>
-                          <option value="Dropdown">Dropdown</option>
-                          <option value="Radio">Radio</option>
+                          <option value="Dropdown">{t("Dropdown")}</option>
+                          <option value="Radio">{t("Radio")}</option>
+                          <option value="MultiSelect">{t("MultiSelect")}</option>
                           {/* <option value="Checkbox">Checkbox</option> */}
                         </Select>
                         <Error errorName={errors.option} />

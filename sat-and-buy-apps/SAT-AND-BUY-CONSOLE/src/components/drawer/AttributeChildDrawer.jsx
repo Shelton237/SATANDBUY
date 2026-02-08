@@ -1,5 +1,6 @@
 import React from "react";
 import Scrollbars from "react-custom-scrollbars-2";
+import { useTranslation } from "react-i18next";
 
 //internal import
 import Title from "@/components/form/others/Title";
@@ -10,8 +11,9 @@ import SwitchToggle from "@/components/form/switch/SwitchToggle";
 import DrawerButton from "@/components/form/button/DrawerButton";
 import useAttributeSubmit from "@/hooks/useAttributeSubmit";
 import Loading from "../preloader/Loading";
+import TextAreaCom from "@/components/form/input/TextAreaCom";
 
-const AttributeChildDrawer = ({ id, code }) => {
+const AttributeChildDrawer = ({ id, attributeId, attributeSlug }) => {
   const {
     handleSubmit,
     onSubmit,
@@ -19,17 +21,32 @@ const AttributeChildDrawer = ({ id, code }) => {
     errors,
     isLoading,
     isSubmitting,
+    published,
     setPublished,
     handleSelectLanguage,
-  } = useAttributeSubmit(id, code);
+  } = useAttributeSubmit(id, attributeId);
+  const { t } = useTranslation();
+
+  const renderStatusToggle = (value, toggle) => (
+    <div className="grid grid-cols-6 gap-3 mb-6 items-center">
+      <LabelArea label={t("Status")} />
+      <div className="col-span-8 sm:col-span-4">
+        <SwitchToggle
+          title={value ? t("Show") : t("Hide")}
+          handleProcess={() => toggle((prev) => !prev)}
+          processOption={value}
+        />
+      </div>
+    </div>
+  );
 
   const renderFieldsByCode = () => {
-    switch (code) {
+    switch (attributeSlug) {
       case "sizes":
         return (
           <>
             <div className="grid grid-cols-6 gap-3 mb-6 items-center">
-              <LabelArea label="Size Name" />
+              <LabelArea label={t("DisplayName")} />
               <div className="col-span-8 sm:col-span-4">
                 <InputArea
                   required={true}
@@ -41,6 +58,7 @@ const AttributeChildDrawer = ({ id, code }) => {
                 <Error errorName={errors.name} />
               </div>
             </div>
+            {renderStatusToggle(published, setPublished)}
           </>
         );
 
@@ -48,7 +66,7 @@ const AttributeChildDrawer = ({ id, code }) => {
         return (
           <>
             <div className="grid grid-cols-6 gap-3 mb-6 items-center">
-              <LabelArea label="Color Name" />
+              <LabelArea label={t("DisplayName")} />
               <div className="col-span-8 sm:col-span-4">
                 <InputArea
                   required={true}
@@ -62,10 +80,9 @@ const AttributeChildDrawer = ({ id, code }) => {
             </div>
 
             <div className="grid grid-cols-6 gap-3 mb-6 items-center">
-              <LabelArea label="Hex Code" />
+              <LabelArea label={t("HexCode")} />
               <div className="col-span-8 sm:col-span-4">
                 <InputArea
-                  required={true}
                   register={register}
                   name="hexCode"
                   type="text"
@@ -74,6 +91,7 @@ const AttributeChildDrawer = ({ id, code }) => {
                 <Error errorName={errors.hexCode} />
               </div>
             </div>
+            {renderStatusToggle(published, setPublished)}
           </>
         );
 
@@ -81,7 +99,7 @@ const AttributeChildDrawer = ({ id, code }) => {
         return (
           <>
             <div className="grid grid-cols-6 gap-3 mb-6 items-center">
-              <LabelArea label="Brand Name" />
+              <LabelArea label={t("DisplayName")} />
               <div className="col-span-8 sm:col-span-4">
                 <InputArea
                   required={true}
@@ -94,13 +112,12 @@ const AttributeChildDrawer = ({ id, code }) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-6 gap-3 mb-6 items-center">
-              <LabelArea label="Description" />
+            <div className="grid grid-cols-6 gap-3 mb-6 items-start">
+              <LabelArea label={`${t("Description")} (${t("Optional") || "optional"})`} />
               <div className="col-span-8 sm:col-span-4">
-                <InputArea
+                <TextAreaCom
                   register={register}
                   name="description"
-                  type="text"
                   placeholder="Short description"
                 />
                 <Error errorName={errors.description} />
@@ -108,10 +125,9 @@ const AttributeChildDrawer = ({ id, code }) => {
             </div>
 
             <div className="grid grid-cols-6 gap-3 mb-6 items-center">
-              <LabelArea label="Logo URL" />
+              <LabelArea label={`${t("Logo")} URL (${t("Optional") || "optional"})`} />
               <div className="col-span-8 sm:col-span-4">
                 <InputArea
-                  required={true}
                   register={register}
                   name="logoUrl"
                   type="text"
@@ -120,24 +136,41 @@ const AttributeChildDrawer = ({ id, code }) => {
                 <Error errorName={errors.logoUrl} />
               </div>
             </div>
+
+            <div className="grid grid-cols-6 gap-3 mb-6 items-center">
+              <LabelArea label={`${t("HexCode")} (${t("Optional") || "optional"})`} />
+              <div className="col-span-8 sm:col-span-4">
+                <InputArea
+                  register={register}
+                  name="hexCode"
+                  type="text"
+                  placeholder="#000000"
+                />
+                <Error errorName={errors.hexCode} />
+              </div>
+            </div>
+            {renderStatusToggle(published, setPublished)}
           </>
         );
-        
+
       default:
         return (
-          <div className="grid grid-cols-6 gap-3 mb-6 items-center">
-            <LabelArea label="Name" />
-            <div className="col-span-8 sm:col-span-4">
-              <InputArea
-                required={true}
-                register={register}
-                name="name"
-                type="text"
-                placeholder="Enter name"
-              />
-              <Error errorName={errors.name} />
+          <>
+            <div className="grid grid-cols-6 gap-3 mb-6 items-center">
+              <LabelArea label={t("DisplayName")} />
+              <div className="col-span-8 sm:col-span-4">
+                <InputArea
+                  required={true}
+                  register={register}
+                  name="name"
+                  type="text"
+                  placeholder="Enter name"
+                />
+                <Error errorName={errors.name} />
+              </div>
             </div>
-          </div>
+            {renderStatusToggle(published, setPublished)}
+          </>
         );
     }
   };
@@ -149,15 +182,15 @@ const AttributeChildDrawer = ({ id, code }) => {
           <Title
             register={register}
             handleSelectLanguage={handleSelectLanguage}
-            title="Update Attribute Values"
-            description="Add your attribute values and necessary information from here"
+            title={t("UpdateAttributeValues")}
+            description={t("UpdateAttributeDesc")}
           />
         ) : (
           <Title
             register={register}
             handleSelectLanguage={handleSelectLanguage}
-            title="Add Attribute Values"
-            description="Add your attribute values and necessary information from here"
+            title={t("AddAttributeValues")}
+            description={t("AddAttributeDesc")}
           />
         )}
       </div>
@@ -167,7 +200,11 @@ const AttributeChildDrawer = ({ id, code }) => {
           <div className="px-6 pt-8 flex-grow scrollbar-hide w-full max-h-full pb-40">
             {isLoading ? <Loading /> : renderFieldsByCode()}
           </div>
-          <DrawerButton id={id} title={code} isSubmitting={isSubmitting} />
+          <DrawerButton
+            id={id}
+            title={attributeSlug || "Attribute Value"}
+            isSubmitting={isSubmitting}
+          />
         </form>
       </Scrollbars>
     </>

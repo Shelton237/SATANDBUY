@@ -87,9 +87,14 @@ const ProductDrawer = ({ id }) => {
     handleSelectImage,
     handleSelectInlineImage,
     handleGenerateCombination,
+    productType,
+    serviceDetails,
+    handleProductTypeChange,
+    handleServiceDetailsChange,
   } = useProductSubmit(id);
 
   const { currency, showingTranslateValue } = useUtilsFunction();
+  const isService = productType === "service";
 
   return (
     <>
@@ -132,7 +137,7 @@ const ProductDrawer = ({ id }) => {
 
       <div className="text-sm font-medium text-center text-gray-500 border-b border-gray-200 dark:text-gray-400 dark:border-gray-600 dark:bg-gray-700">
         <SwitchToggleForCombination
-          product
+          product={!isService}
           handleProcess={handleIsCombination}
           processOption={isCombination}
         />
@@ -195,6 +200,135 @@ const ProductDrawer = ({ id }) => {
                     spellCheck="false"
                   />
                   <Error errorName={errors.description} />
+                </div>
+              </div>
+              {isService && (
+                <div className="mb-8 rounded-md border border-dashed border-gray-200 dark:border-gray-600 p-4">
+                  <h3 className="text-base font-semibold text-gray-700 dark:text-gray-200 mb-4">
+                    {t("ServiceDetailsTitle")}
+                  </h3>
+                  <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-4">
+                    <LabelArea label={t("ServiceDeliveryMode")} />
+                    <div className="col-span-8 sm:col-span-4">
+                      <select
+                        className="w-full h-12 border border-gray-200 dark:border-gray-600 rounded-md px-3 text-gray-700 dark:bg-gray-700 dark:text-gray-100"
+                        value={serviceDetails.deliveryMode}
+                        onChange={(e) =>
+                          handleServiceDetailsChange("deliveryMode", e.target.value)
+                        }
+                      >
+                        <option value="onsite">{t("ServiceDeliveryOnsite")}</option>
+                        <option value="online">{t("ServiceDeliveryOnline")}</option>
+                        <option value="hybrid">{t("ServiceDeliveryHybrid")}</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-4">
+                    <LabelArea label={t("ServiceDuration")} />
+                    <div className="col-span-8 sm:col-span-4 flex flex-col sm:flex-row gap-3">
+                      <InputArea
+                        name="serviceDurationValue"
+                        type="number"
+                        min="0"
+                        value={serviceDetails.durationValue}
+                        onChange={(e) =>
+                          handleServiceDetailsChange("durationValue", e.target.value)
+                        }
+                        placeholder={t("ServiceDurationValuePlaceholder")}
+                      />
+                      <select
+                        className="w-full h-12 border border-gray-200 dark:border-gray-600 rounded-md px-3 text-gray-700 dark:bg-gray-700 dark:text-gray-100"
+                        value={serviceDetails.durationUnit}
+                        onChange={(e) =>
+                          handleServiceDetailsChange("durationUnit", e.target.value)
+                        }
+                      >
+                        <option value="minutes">{t("DurationMinutes")}</option>
+                        <option value="hours">{t("DurationHours")}</option>
+                        <option value="days">{t("DurationDays")}</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-4">
+                    <LabelArea label={t("ServiceLocation")} />
+                    <div className="col-span-8 sm:col-span-4">
+                      <InputArea
+                        name="serviceLocation"
+                        value={serviceDetails.location}
+                        onChange={(e) =>
+                          handleServiceDetailsChange("location", e.target.value)
+                        }
+                        placeholder={t("ServiceLocationPlaceholder")}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-4">
+                    <LabelArea label={t("ServiceResources")} />
+                    <div className="col-span-8 sm:col-span-4">
+                      <InputArea
+                        name="serviceResources"
+                        value={serviceDetails.resources}
+                        onChange={(e) =>
+                          handleServiceDetailsChange("resources", e.target.value)
+                        }
+                        placeholder={t("ServiceResourcesPlaceholder")}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-4">
+                    <LabelArea label={t("ServicePriceIncludes")} />
+                    <div className="col-span-8 sm:col-span-4">
+                      <InputArea
+                        name="servicePriceIncludes"
+                        value={serviceDetails.priceIncludes}
+                        onChange={(e) =>
+                          handleServiceDetailsChange("priceIncludes", e.target.value)
+                        }
+                        placeholder={t("ServicePriceIncludesPlaceholder")}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6">
+                    <LabelArea label={t("ServiceNotes")} />
+                    <div className="col-span-8 sm:col-span-4">
+                      <Textarea
+                        className="border text-sm block w-full bg-gray-100 border-gray-200 dark:bg-gray-700 dark:border-gray-600"
+                        value={serviceDetails.notes}
+                        onChange={(e) =>
+                          handleServiceDetailsChange("notes", e.target.value)
+                        }
+                        rows="3"
+                        placeholder={t("ServiceNotesPlaceholder")}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
+                <LabelArea label={t("ProductType")} />
+                <div className="col-span-8 sm:col-span-4">
+                  <div className="flex flex-wrap gap-6">
+                    <label className="inline-flex items-center space-x-2 text-gray-700 dark:text-gray-200">
+                      <input
+                        type="radio"
+                        name="productType"
+                        value="physical"
+                        checked={productType === "physical"}
+                        onChange={() => handleProductTypeChange("physical")}
+                      />
+                      <span>{t("PhysicalProduct")}</span>
+                    </label>
+                    <label className="inline-flex items-center space-x-2 text-gray-700 dark:text-gray-200">
+                      <input
+                        type="radio"
+                        name="productType"
+                        value="service"
+                        checked={productType === "service"}
+                        onChange={() => handleProductTypeChange("service")}
+                      />
+                      <span>{t("ServiceProduct")}</span>
+                    </label>
+                  </div>
                 </div>
               </div>
               <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
@@ -310,23 +444,32 @@ const ProductDrawer = ({ id }) => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6 relative">
-                <LabelArea label={t("ProductQuantity")} />
-                <div className="col-span-8 sm:col-span-4">
-                  <InputValueFive
-                    required={true}
-                    disabled={isCombination}
-                    register={register}
-                    minValue={0}
-                    defaultValue={0}
-                    label="Quantity"
-                    name="stock"
-                    type="number"
-                    placeholder={t("ProductQuantity")}
-                  />
-                  <Error errorName={errors.stock} />
+              {isService ? (
+                <input
+                  type="hidden"
+                  value={0}
+                  readOnly
+                  {...register("stock")}
+                />
+              ) : (
+                <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6 relative">
+                  <LabelArea label={t("ProductQuantity")} />
+                  <div className="col-span-8 sm:col-span-4">
+                    <InputValueFive
+                      required={true}
+                      disabled={isCombination}
+                      register={register}
+                      minValue={0}
+                      defaultValue={0}
+                      label="Quantity"
+                      name="stock"
+                      type="number"
+                      placeholder={t("ProductQuantity")}
+                    />
+                    <Error errorName={errors.stock} />
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
                 <LabelArea label={t("ProductSlug")} />

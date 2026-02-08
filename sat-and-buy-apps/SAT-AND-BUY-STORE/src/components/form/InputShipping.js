@@ -4,12 +4,23 @@ import { FiTruck } from "react-icons/fi";
 const InputShipping = ({
   register,
   value,
-  time,
   cost,
   currency,
   description,
-  handleShippingCost,
+  onSelect,
+  checked,
 }) => {
+  const registerOption = register(`shippingOption`, {
+    required: `Shipping Option is required!`,
+  });
+
+  const handleChange = (event) => {
+    registerOption.onChange(event);
+    if (typeof onSelect === "function") {
+      onSelect();
+    }
+  };
+
   return (
     <div>
       <div className="p-3 card border border-gray-200 bg-white rounded-md">
@@ -33,13 +44,12 @@ const InputShipping = ({
               </div>
             </div>
             <input
-              onClick={() => handleShippingCost(cost)}
-              {...register(`shippingOption`, {
-                required: `Shipping Option is required!`,
-              })}
+              {...registerOption}
               name="shippingOption"
               type="radio"
               value={value}
+              onChange={handleChange}
+              checked={checked}
               className="form-radio outline-none focus:ring-0 text-emerald-500"
             />
           </div>

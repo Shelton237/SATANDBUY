@@ -1,4 +1,38 @@
+const mongoose = require("mongoose");
 const Order = require("../models/Order");
+const Admin = require("../models/Admin");
+const {
+  normalizeDateOnly,
+  releaseDriverSlotsByOrder,
+  ensureDriverBooking,
+  getTakenSlotsForDriver,
+  parseSlotRange,
+} = require("../lib/delivery/driverBooking");
+
+const SORTING_ITEM_STATUSES = ["Pending", "Checked", "Missing"];
+const ORDER_BOARD_STATUSES = [
+  "Pending",
+  "Sorting",
+  "ReadyForDelivery",
+  "Processing",
+  "Delivered",
+  "Cancel",
+];
+
+const buildSortingItems = (cart = []) =>
+  cart.map((item = {}) => ({
+    productId:
+      item.productId ||
+      item._id?.toString?.() ||
+      item.id ||
+      item.sku ||
+      "",
+    title: item.title || item.name || "",
+    sku: item.sku || "",
+    image: Array.isArray(item.image) ? item.image?.[0] : item.image || "",
+    quantity: item.quantity || 1,
+    status: "Pending",
+  }));
 
 const getAllOrders = async (req, res) => {
   const {
@@ -12,6 +46,7 @@ const getAllOrders = async (req, res) => {
     // sellFrom,
     startDate,
     customerName,
+    driverId,
   } = req.query;
 
   //  day count
@@ -35,6 +70,8 @@ const getAllOrders = async (req, res) => {
   if (!status) {
     queryObject.$or = [
       { status: { $regex: `Pending`, $options: "i" } },
+      { status: { $regex: `Sorting`, $options: "i" } },
+      { status: { $regex: `ReadyForDelivery`, $options: "i" } },
       { status: { $regex: `Processing`, $options: "i" } },
       { status: { $regex: `Delivered`, $options: "i" } },
       { status: { $regex: `Cancel`, $options: "i" } },
@@ -66,6 +103,18 @@ const getAllOrders = async (req, res) => {
     queryObject.paymentMethod = { $regex: `${method}`, $options: "i" };
   }
 
+  if (driverId) {
+    const normalizedDriver = driverId.toString().trim();
+    if (mongoose.Types.ObjectId.isValid(normalizedDriver)) {
+      queryObject["deliveryPlan.driverId"] = normalizedDriver;
+    } else {
+      queryObject["deliveryPlan.assignedDriver"] = {
+        $regex: `${normalizedDriver}`,
+        $options: "i",
+      };
+    }
+  }
+
   const pages = Number(page) || 1;
   const limits = Number(limit);
   const skip = (pages - 1) * limits;
@@ -75,7 +124,7 @@ const getAllOrders = async (req, res) => {
     const totalDoc = await Order.countDocuments(queryObject);
     const orders = await Order.find(queryObject)
       .select(
-        "_id invoice paymentMethod subTotal total user_info discount shippingCost status createdAt updatedAt"
+        "_id invoice paymentMethod subTotal total user_info discount shippingCost status createdAt updatedAt deliveryPlan"
       )
       .sort({ updatedAt: -1 })
       .skip(skip)
@@ -147,43 +196,356 @@ const getOrderById = async (req, res) => {
   }
 };
 
-const updateOrder = (req, res) => {
-  const newStatus = req.body.status;
-  Order.updateOne(
-    {
-      _id: req.params.id,
-    },
-    {
-      $set: {
-        status: newStatus,
-      },
-    },
-    (err) => {
-      if (err) {
-        res.status(500).send({
-          message: err.message,
-        });
-      } else {
-        res.status(200).send({
-          message: "Order Updated Successfully!",
-        });
-      }
+const updateOrder = async (req, res) => {
+  try {
+    const newStatus = req.body.status;
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).send({ message: "Order not found!" });
     }
-  );
+    order.status = newStatus;
+    await order.save();
+    if (["Cancel", "Delivered"].includes(newStatus)) {
+      await releaseDriverSlotsByOrder(order._id, `status:${newStatus}`);
+    }
+    res.send({
+      message: "Order Updated Successfully!",
+    });
+  } catch (err) {
+    res.status(500).send({
+      message: err.message,
+    });
+  }
 };
 
-const deleteOrder = (req, res) => {
-  Order.deleteOne({ _id: req.params.id }, (err) => {
-    if (err) {
-      res.status(500).send({
-        message: err.message,
-      });
-    } else {
-      res.status(200).send({
-        message: "Order Deleted Successfully!",
+const deleteOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).send({ message: "Order not found!" });
+    }
+    await releaseDriverSlotsByOrder(order._id, "order_deleted");
+    await order.deleteOne();
+    res.send({
+      message: "Order Deleted Successfully!",
+    });
+  } catch (err) {
+    res.status(500).send({
+      message: err.message,
+    });
+  }
+};
+
+const startSorting = async (req, res) => {
+  try {
+    const { sorterId, notes } = req.body;
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).send({ message: "Order not found!" });
+    }
+
+    const now = new Date();
+    const existingItems = Array.isArray(order.sorting?.items)
+      ? order.sorting.items
+      : [];
+    const sortingItems =
+      existingItems.length > 0
+        ? existingItems
+        : buildSortingItems(order.cart || []);
+
+    order.sorting = {
+      ...(order.sorting || {}),
+      assignedTo: sorterId || order.sorting?.assignedTo || null,
+      notes:
+        typeof notes === "string"
+          ? notes
+          : order.sorting?.notes || "",
+      status: "InProgress",
+      startedAt: order.sorting?.startedAt || now,
+      items: sortingItems,
+    };
+    order.status = "Sorting";
+
+    await order.save();
+    res.send({
+      message: "Sorting started successfully!",
+      order,
+    });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+};
+
+const completeSorting = async (req, res) => {
+  try {
+    const { notes } = req.body;
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).send({ message: "Order not found!" });
+    }
+
+    if (
+      !order.sorting ||
+      !Array.isArray(order.sorting.items) ||
+      order.sorting.items.length === 0
+    ) {
+      return res.status(400).send({
+        message: "Aucun produit Ã  vÃ©rifier. Veuillez d'abord dÃ©marrer le tri.",
       });
     }
+
+    const pendingItem = order.sorting.items.find(
+      (item) => item.status === "Pending"
+    );
+    if (pendingItem) {
+      return res.status(400).send({
+        message:
+          "Tous les produits doivent Ãªtre cochÃ©s (prÃ©sents ou manquants) avant de terminer le tri.",
+      });
+    }
+
+    const now = new Date();
+    order.sorting = {
+      ...(order.sorting || {}),
+      status: "Completed",
+      completedAt: now,
+      startedAt: order.sorting?.startedAt || now,
+      notes:
+        typeof notes === "string"
+          ? notes
+          : order.sorting?.notes || "",
+    };
+    order.status = "ReadyForDelivery";
+
+    await order.save();
+    res.send({
+      message: "Sorting completed successfully!",
+      order,
+    });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+};
+
+const updateSortingItem = async (req, res) => {
+  try {
+    const { id, itemId } = req.params;
+    const { status, notes, checkerId } = req.body;
+
+    if (!SORTING_ITEM_STATUSES.includes(status)) {
+      return res.status(400).send({ message: "Statut de tri invalide." });
+    }
+
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).send({ message: "Order not found!" });
+    }
+
+    if (!order.sorting || !Array.isArray(order.sorting.items)) {
+      return res.status(400).send({
+        message: "Le tri n'a pas encore Ã©tÃ© dÃ©marrÃ© pour cette commande.",
+      });
+    }
+
+    const targetItem = order.sorting.items.id(itemId);
+    if (!targetItem) {
+      return res
+        .status(404)
+        .send({ message: "Produit introuvable dans la checklist." });
+    }
+
+    targetItem.status = status;
+    if (typeof notes === "string") {
+      targetItem.notes = notes;
+    }
+
+    if (status === "Pending") {
+      targetItem.checkedBy = null;
+      targetItem.checkedAt = null;
+    } else {
+      if (checkerId) {
+        targetItem.checkedBy = checkerId;
+      }
+      targetItem.checkedAt = new Date();
+    }
+
+    await order.save();
+    res.send({
+      message: "Produit de la checklist mis Ã  jour.",
+      item: targetItem,
+      order,
+    });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+};
+
+const normalizeStatuses = (statuses = []) => {
+  const lowerMap = ORDER_BOARD_STATUSES.reduce((acc, status) => {
+    acc[status.toLowerCase()] = status;
+    return acc;
+  }, {});
+  const unique = [];
+  statuses.forEach((status) => {
+    const normalized =
+      lowerMap[status.toLowerCase()] || status.charAt(0).toUpperCase() + status.slice(1);
+    if (!unique.includes(normalized)) {
+      unique.push(normalized);
+    }
   });
+  return unique;
+};
+
+const getOrdersBoard = async (req, res) => {
+  try {
+    const limit = Math.min(Math.max(Number(req.query.limit) || 20, 1), 50);
+    const requestedStatuses = req.query.statuses
+      ? req.query.statuses
+          .split(",")
+          .map((status) => status.trim())
+          .filter(Boolean)
+      : ORDER_BOARD_STATUSES;
+
+    const statuses = normalizeStatuses(requestedStatuses);
+    const board = {};
+
+    for (const status of statuses) {
+      const orders = await Order.find({ status })
+        .sort({ updatedAt: -1 })
+        .limit(limit)
+        .select(
+          "_id invoice user_info total sorting deliveryPlan status updatedAt createdAt"
+        )
+        .lean();
+      board[status] = orders;
+    }
+
+    res.send({
+      statuses,
+      board,
+      limit,
+    });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+};
+
+const updateDeliveryPlan = async (req, res) => {
+  try {
+    const {
+      assignedDriver,
+      deliveryDate,
+      deliveryWindow,
+      notes,
+      deliveryStatus,
+      status,
+      driverId,
+    } = req.body;
+
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).send({ message: "Order not found!" });
+    }
+
+    const plan = order.deliveryPlan || {};
+    const effectiveDriverId = driverId || plan.driverId;
+    if (!effectiveDriverId) {
+      return res
+        .status(400)
+        .send({ message: "Veuillez sélectionner un livreur." });
+    }
+
+    const driver = await Admin.findById(effectiveDriverId);
+    if (!driver || driver.role !== "Livreur") {
+      return res.status(400).send({ message: "Livreur invalide." });
+    }
+
+    if (deliveryDate) {
+      plan.deliveryDate = new Date(deliveryDate);
+    } else if (!plan.deliveryDate) {
+      return res
+        .status(400)
+        .send({ message: "La date de livraison est requise." });
+    }
+
+    if (deliveryWindow !== undefined) {
+      plan.deliveryWindow = deliveryWindow;
+    }
+    if (!plan.deliveryWindow) {
+      return res
+        .status(400)
+        .send({ message: "Le créneau horaire est requis." });
+    }
+
+    const normalizedDate = normalizeDateOnly(plan.deliveryDate);
+    if (!normalizedDate) {
+      return res
+        .status(400)
+        .send({ message: "Date de livraison invalide." });
+    }
+
+    let slotRange;
+    try {
+      slotRange = parseSlotRange(plan.deliveryWindow);
+    } catch (rangeError) {
+      return res
+        .status(400)
+        .send({ message: rangeError.message || "Cr?neau invalide." });
+    }
+
+    const taken = await getTakenSlotsForDriver({
+      driverId: driver._id,
+      date: normalizedDate,
+      excludeOrderId: order._id,
+    });
+    const overlaps = taken.some(
+      (booking) =>
+        booking.startMinutes < slotRange.endMinutes &&
+        booking.endMinutes > slotRange.startMinutes
+    );
+    if (overlaps) {
+      return res
+        .status(409)
+        .send({ message: "Ce cr?neau est d?j? r?serv? pour ce livreur." });
+    }
+
+    const driverDisplayName =
+      assignedDriver ||
+      plan.assignedDriver ||
+      (typeof driver.name === "object"
+        ? driver.name.fr ||
+          driver.name.en ||
+          Object.values(driver.name)[0]
+        : driver.name || driver.email);
+
+    plan.assignedDriver = driverDisplayName;
+    plan.driverId = driver._id;
+    plan.notes = notes !== undefined ? notes : plan.notes;
+    plan.status = deliveryStatus || plan.status || "Scheduled";
+    order.deliveryPlan = plan;
+
+    order.status =
+      status ||
+      (order.status === "ReadyForDelivery"
+        ? "Processing"
+        : order.status || "Processing");
+
+    await order.save();
+    await ensureDriverBooking({
+      orderId: order._id,
+      driverId: driver._id,
+      date: normalizedDate,
+      slot: plan.deliveryWindow,
+    });
+
+    res.send({
+      message: "Delivery plan updated successfully!",
+      order,
+    });
+  } catch (err) {
+    const statusCode = err.statusCode || 500;
+    res.status(statusCode).send({ message: err.message });
+  }
 };
 
 // get dashboard recent order
@@ -199,6 +561,8 @@ const getDashboardRecentOrder = async (req, res) => {
 
     queryObject.$or = [
       { status: { $regex: `Pending`, $options: "i" } },
+      { status: { $regex: `Sorting`, $options: "i" } },
+      { status: { $regex: `ReadyForDelivery`, $options: "i" } },
       { status: { $regex: `Processing`, $options: "i" } },
       { status: { $regex: `Delivered`, $options: "i" } },
       { status: { $regex: `Cancel`, $options: "i" } },
@@ -250,11 +614,43 @@ const getDashboardCount = async (req, res) => {
       },
     ]);
 
-    // total processing order count
+    const totalSortingOrder = await Order.aggregate([
+      {
+        $match: {
+          status: "Sorting",
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          count: {
+            $sum: 1,
+          },
+        },
+      },
+    ]);
+
+    // total processing order count (includes ready for delivery workflow)
     const totalProcessingOrder = await Order.aggregate([
       {
         $match: {
-          status: "Processing",
+          status: { $in: ["Processing", "ReadyForDelivery"] },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          count: {
+            $sum: 1,
+          },
+        },
+      },
+    ]);
+
+    const totalReadyForDeliveryOrder = await Order.aggregate([
+      {
+        $match: {
+          status: "ReadyForDelivery",
         },
       },
       {
@@ -287,7 +683,9 @@ const getDashboardCount = async (req, res) => {
     res.send({
       totalOrder: totalDoc,
       totalPendingOrder: totalPendingOrder[0] || 0,
+      totalSortingOrder: totalSortingOrder[0]?.count || 0,
       totalProcessingOrder: totalProcessingOrder[0]?.count || 0,
+      totalReadyForDeliveryOrder: totalReadyForDeliveryOrder[0]?.count || 0,
       totalDeliveredOrder: totalDeliveredOrder[0]?.count || 0,
     });
   } catch (err) {
@@ -579,11 +977,29 @@ const getDashboardOrders = async (req, res) => {
       },
     ]);
 
-    // total delivered order count
+    // sorting in progress
+    const totalSortingOrder = await Order.aggregate([
+      {
+        $match: {
+          status: "Sorting",
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$total" },
+          count: {
+            $sum: 1,
+          },
+        },
+      },
+    ]);
+
+    // ready or processing orders
     const totalProcessingOrder = await Order.aggregate([
       {
         $match: {
-          status: "Processing",
+          status: { $in: ["Processing", "ReadyForDelivery"] },
         },
       },
       {
@@ -637,10 +1053,12 @@ const getDashboardOrders = async (req, res) => {
           : parseFloat(totalAmountOfThisMonth[0].total).toFixed(2),
       totalPendingOrder:
         totalPendingOrder.length === 0 ? 0 : totalPendingOrder[0],
+      totalSortingOrder:
+        totalSortingOrder.length === 0 ? 0 : totalSortingOrder[0],
       totalProcessingOrder:
-        totalProcessingOrder.length === 0 ? 0 : totalProcessingOrder[0].count,
+        totalProcessingOrder.length === 0 ? 0 : totalProcessingOrder[0],
       totalDeliveredOrder:
-        totalDeliveredOrder.length === 0 ? 0 : totalDeliveredOrder[0].count,
+        totalDeliveredOrder.length === 0 ? 0 : totalDeliveredOrder[0],
       orders,
       weeklySaleReport,
     });
@@ -657,6 +1075,11 @@ module.exports = {
   getOrderCustomer,
   updateOrder,
   deleteOrder,
+  startSorting,
+  completeSorting,
+  updateSortingItem,
+  updateDeliveryPlan,
+  getOrdersBoard,
   bestSellerProductChart,
   getDashboardOrders,
   getDashboardRecentOrder,

@@ -40,64 +40,70 @@ const AttributeTable = ({ isCheck, setIsCheck, attributes }) => {
       )}
 
       <TableBody>
-        {attributes?.map((attribute) => (
-          <TableRow key={attribute._id}>
-            <TableCell>
-              <CheckBox
-                type="checkbox"
-                name="attribute"
-                id={attribute._id}
-                handleClick={handleClick}
-                isChecked={isCheck?.includes(attribute._id)}
-              />
-            </TableCell>
-
-            <TableCell className="font-semibold uppercase text-xs">
-              {attribute?._id?.substring(20, 24)}
-            </TableCell>
-
-            <TableCell className="font-medium text-sm">
-              {showingTranslateValue(attribute.title)}
-            </TableCell>
-
-            <TableCell className="font-medium text-sm">
-              {showingTranslateValue(attribute.name)}
-            </TableCell>
-
-            <TableCell className="font-medium text-sm">
-              {attribute.option}
-            </TableCell>
-
-            <TableCell className="text-center">
-              <ShowHideButton id={attribute._id} status={attribute.status} />
-            </TableCell>
-
-            <TableCell className="flex justify-center">
-              <Link
-                to={`/attributes/${attribute._id}`}
-                className="p-2 cursor-pointer text-gray-400 hover:text-emerald-600 focus:outline-none"
-              >
-                <Tooltip
-                  id="edit values"
-                  Icon={FiEdit}
-                  title="Edit Values"
-                  bgColor="#10B981"
+        {attributes?.map((attribute) => {
+          const attributeId = attribute.id || attribute._id;
+          const hasValues =
+            Array.isArray(attribute?.variants) && attribute.variants.length > 0;
+          return (
+            <TableRow key={attributeId}>
+              <TableCell>
+                <CheckBox
+                  type="checkbox"
+                  name="attribute"
+                  id={attributeId}
+                  handleClick={handleClick}
+                  isChecked={isCheck?.includes(attributeId)}
                 />
-              </Link>
-            </TableCell>
+              </TableCell>
 
-            <TableCell>
-              <EditDeleteButton
-                id={attribute._id}
-                isCheck={isCheck}
-                setIsCheck={setIsCheck}
-                handleUpdate={handleUpdate}
-                handleModalOpen={handleModalOpen}
-                title={showingTranslateValue(attribute.title)}
-              />
-            </TableCell>
-          </TableRow>
-        ))}
+              <TableCell className="font-semibold uppercase text-xs">
+                {attributeId?.toString().substring(20, 24)}
+              </TableCell>
+
+              <TableCell className="font-medium text-sm">
+                {showingTranslateValue(attribute.title)}
+              </TableCell>
+
+              <TableCell className="font-medium text-sm">
+                {showingTranslateValue(attribute.name)}
+              </TableCell>
+
+              <TableCell className="font-medium text-sm">
+                {attribute.option}
+              </TableCell>
+
+              <TableCell className="text-center">
+                <ShowHideButton id={attributeId} status={attribute.status} />
+              </TableCell>
+
+              <TableCell className="flex justify-center">
+                <Link
+                  to={`/attributes/${attributeId}`}
+                  className="p-2 cursor-pointer text-gray-400 hover:text-emerald-600 focus:outline-none"
+                >
+                  <Tooltip
+                    id="edit values"
+                    Icon={FiEdit}
+                    title="Edit Values"
+                    bgColor="#10B981"
+                  />
+                </Link>
+              </TableCell>
+
+              <TableCell>
+                <EditDeleteButton
+                  id={attributeId}
+                  isCheck={isCheck}
+                  setIsCheck={setIsCheck}
+                  handleUpdate={handleUpdate}
+                  handleModalOpen={handleModalOpen}
+                  title={showingTranslateValue(attribute.title)}
+                  hasValues={hasValues}
+                />
+              </TableCell>
+            </TableRow>
+          );
+        })}
       </TableBody>
     </>
   );

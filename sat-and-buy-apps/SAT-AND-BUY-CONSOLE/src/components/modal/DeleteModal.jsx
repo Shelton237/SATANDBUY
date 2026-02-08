@@ -19,7 +19,14 @@ import CurrencyServices from "@/services/CurrencyServices";
 import { notifyError, notifySuccess } from "@/utils/toast";
 
 // code pour gerer les differents attributs
-const DeleteModal = ({ ids, setIsCheck, category, title, useParamId, code }) => {
+const DeleteModal = ({
+  ids,
+  setIsCheck,
+  category,
+  title,
+  useParamId,
+  code,
+}) => {
   const { isModalOpen, closeModal, setIsUpdate } = useContext(SidebarContext);
   const { serviceId, setServiceId } = useToggleDrawer();
   const location = useLocation();
@@ -35,7 +42,9 @@ const DeleteModal = ({ ids, setIsCheck, category, title, useParamId, code }) => 
           const res = await ProductServices.deleteManyProducts({ ids });
           setIsUpdate(true);
           notifySuccess(res.message);
-          setIsCheck([]);
+          if (typeof setIsCheck === "function") {
+            setIsCheck([]);
+          }
         } else {
           const res = await ProductServices.deleteProduct(serviceId);
           setIsUpdate(true);
@@ -51,7 +60,9 @@ const DeleteModal = ({ ids, setIsCheck, category, title, useParamId, code }) => 
           const res = await CouponServices.deleteManyCoupons({ ids });
           setIsUpdate(true);
           notifySuccess(res.message);
-          setIsCheck([]);
+          if (typeof setIsCheck === "function") {
+            setIsCheck([]);
+          }
         } else {
           const res = await CouponServices.deleteCoupon(serviceId);
           setIsUpdate(true);
@@ -67,7 +78,9 @@ const DeleteModal = ({ ids, setIsCheck, category, title, useParamId, code }) => 
           const res = await CategoryServices.deleteManyCategory({ ids });
           setIsUpdate(true);
           notifySuccess(res.message);
-          setIsCheck([]);
+          if (typeof setIsCheck === "function") {
+            setIsCheck([]);
+          }
         } else {
           if (!serviceId) {
             notifyError("Please select a category first!");
@@ -110,18 +123,29 @@ const DeleteModal = ({ ids, setIsCheck, category, title, useParamId, code }) => 
         setIsSubmitting(false);
       }
       if (
-        location.pathname === `/attributes/${location.pathname.split("/")[2]}`
+        location.pathname.startsWith("/attributes/")
       ) {
+        const attributeId = code || location.pathname.split("/")[2];
         if (ids) {
           const res = await AttributeServices.deleteManyChildAttribute({
-            id: location.pathname.split("/")[2],
+            id: attributeId,
             ids,
           });
           setIsUpdate(true);
           notifySuccess(res.message);
-          setIsCheck([]);
+          if (typeof setIsCheck === "function") {
+            setIsCheck([]);
+          }
         } else {
-          const res = await AttributeServices.delete(serviceId, code);
+          if (!attributeId) {
+            notifyError("Attribute identifier missing");
+            setIsSubmitting(false);
+            return closeModal();
+          }
+          const res = await AttributeServices.deleteChildAttribute(
+            attributeId,
+            serviceId
+          );
           setIsUpdate(true);
           notifySuccess(res.message);
         }
@@ -144,7 +168,9 @@ const DeleteModal = ({ ids, setIsCheck, category, title, useParamId, code }) => 
           const res = await LanguageServices.deleteManyLanguage({ ids });
           setIsUpdate(true);
           notifySuccess(res.message);
-          setIsCheck([]);
+          if (typeof setIsCheck === "function") {
+            setIsCheck([]);
+          }
         } else {
           const res = await LanguageServices.deleteLanguage(serviceId);
           setIsUpdate(true);
@@ -160,9 +186,32 @@ const DeleteModal = ({ ids, setIsCheck, category, title, useParamId, code }) => 
           const res = await CurrencyServices.deleteManyCurrency({ ids });
           setIsUpdate(true);
           notifySuccess(res.message);
-          setIsCheck([]);
+          if (typeof setIsCheck === "function") {
+            setIsCheck([]);
+          }
         } else {
           const res = await CurrencyServices.deleteCurrency(serviceId);
+          setIsUpdate(true);
+          notifySuccess(res.message);
+        }
+        closeModal();
+        setServiceId();
+        setIsSubmitting(false);
+      }
+
+      if (location.pathname === "/attributes") {
+        if (ids) {
+          const res = await AttributeServices.deleteManyAttribute({ ids });
+          setIsUpdate(true);
+          notifySuccess(res.message);
+          setIsCheck && setIsCheck([]);
+        } else {
+          if (!serviceId) {
+            notifyError("Please select an attribute first!");
+            setIsSubmitting(false);
+            return closeModal();
+          }
+          const res = await AttributeServices.delete(serviceId);
           setIsUpdate(true);
           notifySuccess(res.message);
         }
@@ -173,7 +222,9 @@ const DeleteModal = ({ ids, setIsCheck, category, title, useParamId, code }) => 
     } catch (err) {
       notifyError(err ? err?.response?.data?.message : err?.message);
       setServiceId();
-      setIsCheck([]);
+      if (typeof setIsCheck === "function") {
+        setIsCheck([]);
+      }
       closeModal();
       setIsSubmitting(false);
     }
@@ -226,3 +277,4 @@ const DeleteModal = ({ ids, setIsCheck, category, title, useParamId, code }) => 
 };
 
 export default React.memo(DeleteModal);
+

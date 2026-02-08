@@ -50,12 +50,12 @@ const useBulkActionSubmit = (ids, lang = "en", childId) => {
       // product data
       const productData = {
         ids: ids,
-        categories: selectedCategory?.map((item) => item._id),
-        category: defaultCategory[0]?._id,
+        categories: selectedCategory?.map((item) => item.id || item._id),
+        category: (defaultCategory[0]?.id || defaultCategory[0]?._id),
         productType: [isFoodItem ? "food" : "others"],
         show: data.show,
         status: published ? "show" : "hide",
-        tag: JSON.stringify(tag),
+        tag: tag,
       };
 
       // language data

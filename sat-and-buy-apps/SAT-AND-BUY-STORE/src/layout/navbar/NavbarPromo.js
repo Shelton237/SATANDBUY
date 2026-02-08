@@ -31,7 +31,14 @@ const NavbarPromo = () => {
   const { showingTranslateValue } = useUtilsFunction();
   const currentLanguage = Cookies.get("_curr_lang") || null;
 
-  let currentLang = currentLanguage ? JSON?.parse(currentLanguage) : {};
+  let currentLang = {};
+  if (currentLanguage && currentLanguage !== "undefined") {
+    try {
+      currentLang = JSON.parse(currentLanguage);
+    } catch (err) {
+      currentLang = {};
+    }
+  }
 
   const handleLanguage = (lang) => {
     // setCurrentLang(lang);

@@ -6,6 +6,12 @@ import { useDispatch } from "react-redux";
 //internal import
 // import { addSetting, removeSetting } from "@/reduxStore/slice/settingSlice";
 
+const SUPPORTED_LANGUAGES = ["en", "fr"];
+const normalizeLanguage = (langCode) => {
+  const base = (langCode || "").split("-")[0]?.toLowerCase();
+  return SUPPORTED_LANGUAGES.includes(base) ? base : "en";
+};
+
 // create context
 export const SidebarContext = createContext();
 
@@ -33,6 +39,7 @@ export const SidebarProvider = ({ children }) => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [method, setMethod] = useState("");
+  const [owner, setOwner] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [windowDimension, setWindowDimension] = useState(window.innerWidth);
   const [loading, setLoading] = useState(false);
@@ -55,13 +62,14 @@ export const SidebarProvider = ({ children }) => {
   const closeModal = () => setIsModalOpen(false);
   const toggleModal = () => setIsModalOpen(!isModalOpen);
 
-  const handleLanguageChange = (lang) => {
-    Cookies.set("i18next", lang, {
+  const handleLanguageChange = (langCode) => {
+    const nextLang = normalizeLanguage(langCode);
+    Cookies.set("i18next", nextLang, {
       sameSite: "None",
       secure: true,
     });
-    i18n.changeLanguage(lang);
-    setLang(lang);
+    i18n.changeLanguage(nextLang);
+    setLang(nextLang);
   };
 
   const handleChangePage = (p) => {
@@ -76,19 +84,17 @@ export const SidebarProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    const lang = Cookies.get("i18next");
-    const removeRegion = (langCode) => {
-      const updatedLang = langCode?.split("-")[0];
-      return updatedLang;
-    };
-
-    const updatedLang = removeRegion(lang);
-    setLang(updatedLang);
-    Cookies.set("i18next", updatedLang, {
+    const cookieLang = Cookies.get("i18next");
+    const normalized = normalizeLanguage(cookieLang || lang);
+    if (normalized !== lang) {
+      setLang(normalized);
+      i18n.changeLanguage(normalized);
+    }
+    Cookies.set("i18next", normalized, {
       sameSite: "None",
       secure: true,
     });
-  }, [lang]);
+  }, [lang, i18n]);
 
   useEffect(() => {
     function handleResize() {
@@ -173,6 +179,8 @@ export const SidebarProvider = ({ children }) => {
         setStartDate,
         endDate,
         setEndDate,
+        owner,
+        setOwner,
         loading,
         setLoading,
         invoice,
@@ -187,7 +195,7 @@ export const SidebarProvider = ({ children }) => {
         allId,
         setAllId,
         title,
-        setTitle
+        setTitle,
       }}
     >
       {children}

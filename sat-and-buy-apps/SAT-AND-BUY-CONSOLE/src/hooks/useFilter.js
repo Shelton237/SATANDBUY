@@ -82,17 +82,11 @@ const useFilter = (data) => {
   const [zone, setZone] = useState("");
   const [language, setLanguage] = useState("");
   const [currency, setCurrency] = useState("");
-  const [pending, setPending] = useState([]);
-  const [processing, setProcessing] = useState([]);
-  const [delivered, setDelivered] = useState([]);
   const [status, setStatus] = useState("");
   const [role, setRole] = useState("");
   const [time, setTime] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [dataTable, setDataTable] = useState([]); //tableTable for showing on table according to filtering
-  const [todayOrder, setTodayOrder] = useState("");
-  const [monthlyOrder, setMonthlyOrder] = useState("");
-  const [totalOrder, setTotalOrder] = useState("");
   const [selectedFile, setSelectedFile] = useState([]);
   const [filename, setFileName] = useState("");
   const [isDisabled, setIsDisable] = useState(false);
@@ -118,70 +112,90 @@ const useFilter = (data) => {
 
   // console.log("VITE_APP_DEMO", import.meta.env.VITE_APP_DEMO);
 
+  const normalizedData = useMemo(() => {
+    if (Array.isArray(data)) return data;
+
+    const payload = data?.data;
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.orders)) return payload.orders;
+    if (Array.isArray(payload?.customers)) return payload.customers;
+    if (Array.isArray(payload?.products)) return payload.products;
+
+    if (Array.isArray(data?.orders)) return data.orders;
+    if (Array.isArray(data?.customers)) return data.customers;
+    if (Array.isArray(data?.products)) return data.products;
+
+    return [];
+  }, [data]);
+
   //service data filtering
-  const serviceData = useMemo(() => {
+  const serviceComputation = useMemo(() => {
     const date = new Date();
     date.setDate(date.getDate() - time);
-    let services = data?.map((el) => {
+
+    const stats = {
+      pending: [],
+      processing: [],
+      delivered: [],
+      todayOrder: 0,
+      monthlyOrder: 0,
+      totalOrder: 0,
+    };
+
+    let services = (normalizedData || []).map((el) => {
       const newDate = new Date(el?.updatedAt).toLocaleString("en-US", {
         timeZone: globalSetting?.default_time_zone,
       });
-      const newObj = {
+      return {
         ...el,
         updatedDate: newDate === "Invalid Date" ? "" : newDate,
       };
-      return newObj;
     });
+
     if (location.pathname === "/dashboard") {
-      const orderPending = services?.filter(
-        (statusP) => statusP.status === "Pending"
-      );
-      setPending(orderPending);
-      const orderProcessing = services?.filter(
-        (statusO) => statusO.status === "Processing"
-      );
-      setProcessing(orderProcessing);
-      const orderDelivered = services?.filter(
-        (statusD) => statusD.status === "Delivered"
-      );
-      setDelivered(orderDelivered);
-      //daily total order calculation
+      stats.pending =
+        services?.filter((statusP) => statusP.status === "Pending") || [];
+      stats.processing =
+        services?.filter((statusO) => statusO.status === "Processing") || [];
+      stats.delivered =
+        services?.filter((statusD) => statusD.status === "Delivered") || [];
+
       const todayServices = services?.filter((order) =>
         dayjs(order.createdAt).isToday()
       );
-      const todayOrder = todayServices?.reduce(
-        (preValue, currentValue) => preValue + currentValue.total,
-        0
-      );
-      setTodayOrder(todayOrder);
-      //monthly order calculation
+      stats.todayOrder =
+        todayServices?.reduce(
+          (preValue, currentValue) => preValue + currentValue.total,
+          0
+        ) || 0;
+
       const monthlyServices = services?.filter((order) =>
         dayjs(order.createdAt).isBetween(
           new Date().setDate(new Date().getDate() - 30),
           new Date()
         )
       );
-      const monthlyOrder = monthlyServices?.reduce(
-        (preValue, currentValue) => preValue + currentValue.total,
-        0
-      );
-      setMonthlyOrder(monthlyOrder);
-      //total order calculation
-      const totalOrder = services?.reduce(
-        (preValue, currentValue) => preValue + currentValue.total,
-        0
-      );
-      setTotalOrder(totalOrder);
+      stats.monthlyOrder =
+        monthlyServices?.reduce(
+          (preValue, currentValue) => preValue + currentValue.total,
+          0
+        ) || 0;
+
+      stats.totalOrder =
+        services?.reduce(
+          (preValue, currentValue) => preValue + currentValue.total,
+          0
+        ) || 0;
     }
-    //products filtering
+
     if (filter) {
       services = services.filter((item) => item.parent === filter);
     }
     if (sortedField === "Low") {
-      services = services.sort((a, b) => a.price < b.price && -1);
+      services = services.sort((a, b) => (a.price < b.price ? -1 : 1));
     }
     if (sortedField === "High") {
-      services = services.sort((a, b) => a.price > b.price && -1);
+      services = services.sort((a, b) => (a.price > b.price ? -1 : 1));
     }
     if (searchText) {
       services = services.filter((search) =>
@@ -190,7 +204,6 @@ const useFilter = (data) => {
     }
 
     if (attributeTitle) {
-      // console.log("asss");
       services = services.filter(
         (search) =>
           search?.title[lang]
@@ -212,11 +225,10 @@ const useFilter = (data) => {
       );
     }
 
-    //admin Filtering
     if (role) {
       services = services.filter((staff) => staff.role === role);
     }
-    //User and Admin filtering
+
     if (searchUser) {
       services = services.filter(
         (search) =>
@@ -227,7 +239,7 @@ const useFilter = (data) => {
           search?.email?.toLowerCase().includes(searchUser.toLowerCase())
       );
     }
-    //Coupon filtering
+
     if (searchCoupon) {
       services = services?.filter(
         (search) =>
@@ -239,7 +251,7 @@ const useFilter = (data) => {
             .includes(searchCoupon?.toLowerCase())
       );
     }
-    // order filtering
+
     if (status) {
       services = services.filter((order) => order.status === status);
     }
@@ -254,7 +266,6 @@ const useFilter = (data) => {
       );
     }
 
-    //country filtering
     if (country) {
       services = services.filter(
         (cou) =>
@@ -263,14 +274,12 @@ const useFilter = (data) => {
       );
     }
 
-    //shipping filtering
     if (shipping) {
       services = services.filter((ship) =>
         ship?.name.toLowerCase().includes(shipping.toLowerCase())
       );
     }
 
-    //language filtering
     if (language) {
       services = services.filter(
         (lan) =>
@@ -285,12 +294,11 @@ const useFilter = (data) => {
         cur.iso_code.toLowerCase().includes(currency.toLowerCase())
       );
     }
-    // console.log("render", data, "categoryRef", categoryRef);
 
-    return services;
+    return { services, stats };
   }, [
     time,
-    data,
+    normalizedData,
     location.pathname,
     filter,
     sortedField,
@@ -310,6 +318,10 @@ const useFilter = (data) => {
     globalSetting?.default_time_zone,
     lang,
   ]);
+
+  const serviceData = serviceComputation.services;
+  const { pending, processing, delivered, todayOrder, monthlyOrder, totalOrder } =
+    serviceComputation.stats;
 
   //pagination functionality start
   const resultsPerPage = 20;

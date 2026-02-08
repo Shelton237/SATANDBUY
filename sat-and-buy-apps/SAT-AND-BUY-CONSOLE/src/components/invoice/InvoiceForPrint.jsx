@@ -10,44 +10,80 @@ import {
 import dayjs from "dayjs";
 import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
+import satLogo from "@/assets/img/logo/logo-text.png";
+
+const resolveTitle = (title) => {
+  if (!title) return "";
+  if (typeof title === "string") return title;
+  if (typeof title === "object") {
+    return (
+      title?.en ||
+      title?.fr ||
+      Object.values(title).find((val) => typeof val === "string") ||
+      ""
+    );
+  }
+  return String(title);
+};
+
+const resolvePrice = (item) => {
+  if (typeof item?.price === "number") return item.price;
+  if (typeof item?.prices?.price === "number") return item.prices.price;
+  if (typeof item?.prices?.originalPrice === "number")
+    return item.prices.originalPrice;
+  return 0;
+};
+
+const resolveLineTotal = (item) => {
+  if (typeof item?.itemTotal === "number") return item.itemTotal;
+  const qty = typeof item?.quantity === "number" ? item.quantity : 0;
+  return resolvePrice(item) * qty;
+};
 
 const InvoiceForPrint = ({ data, printRef, globalSetting }) => {
   const { t } = useTranslation();
 
-  const currency = globalSetting?.default_currency || "$";
+  const currency = globalSetting?.default_currency || "FCFA";
+  const logoSource = globalSetting?.logo || satLogo;
+  const companyName = globalSetting?.company_name || "Sat & Buy";
+  const companyAddress =
+    globalSetting?.address || "Boulevard de la Liberté, Douala, Cameroun";
+  const companyContact = globalSetting?.contact || "+237 00 00 00 00";
+  const companyWebsite =
+    globalSetting?.web_site || "https://satandbuy.dreamsdigital.cm";
+  const companyEmail =
+    globalSetting?.email || "support@satandbuy.dreamsdigital.cm";
 
   return (
     <div ref={printRef} className="p-4">
       {Array.isArray(data) ? (
         data?.map((or, i) => (
           <div className="mb-8" key={i + 1}>
-            {globalSetting?.logo && (
-              <img
-                className="flex mx-auto"
-                size="large"
-                src={globalSetting?.logo}
-                alt=""
-                width={50}
-              />
-            )}
+            <img
+              className="flex mx-auto"
+              size="large"
+              src={logoSource}
+              alt="Sat & Buy"
+              width={50}
+            />
 
             <div className="my-1">
               <div className="flex justify-center">
                 <h1 className="font-bold text-xl">
-                  {globalSetting?.company_name}
+                  {companyName}
                 </h1>
               </div>
 
               <ModalBody className="flex flex-col justify-center text-center">
-                <span className="flex-row">{globalSetting?.address}</span>
+                <span className="flex-row">{companyAddress}</span>
 
                 <span className="flex justify-center">
-                  {globalSetting?.contact}
+                  {companyContact}
                 </span>
 
-                {globalSetting?.web_site}
+                {companyWebsite}
                 <br />
-                {globalSetting?.email}
+                {companyEmail}
               </ModalBody>
             </div>
 
@@ -77,7 +113,7 @@ const InvoiceForPrint = ({ data, printRef, globalSetting }) => {
                       <TableCell className="py-1">
                         <span className="font-normal text-gray-600 bill">
                           {" "}
-                          {item.title?.substring(0, 15)}
+                          {resolveTitle(item.title).substring(0, 15)}
                         </span>
                       </TableCell>
                       <TableCell className="text-center py-1">
@@ -91,7 +127,7 @@ const InvoiceForPrint = ({ data, printRef, globalSetting }) => {
                         <span className="text-right font-bold text-gray-700 bill">
                           {" "}
                           {currency}
-                          {(item.price * item.quantity).toFixed(2)}
+                          {resolveLineTotal(item).toFixed(2)}
                         </span>
                       </TableCell>
                     </TableRow>
@@ -258,33 +294,31 @@ const InvoiceForPrint = ({ data, printRef, globalSetting }) => {
         ))
       ) : (
         <Fragment>
-          {globalSetting?.logo && (
-            <img
-              className="flex mx-auto"
-              size="large"
-              src={globalSetting?.logo}
-              alt=""
-              width={50}
-            />
-          )}
+          <img
+            className="flex mx-auto"
+            size="large"
+            src={logoSource}
+            alt="Sat & Buy"
+            width={50}
+          />
 
           <div className="my-1">
             <div className="flex justify-center">
               <h1 className="font-bold text-xl">
-                {globalSetting?.company_name}
+                {companyName}
               </h1>
             </div>
 
             <ModalBody className="flex flex-col justify-center text-center">
-              <span className="flex-row">{globalSetting?.address}</span>
+              <span className="flex-row">{companyAddress}</span>
 
               <span className="flex justify-center">
-                {globalSetting?.contact}
+                {companyContact}
               </span>
 
-              {globalSetting?.web_site}
+              {companyWebsite}
               <br />
-              {globalSetting?.email}
+              {companyEmail}
             </ModalBody>
           </div>
 
@@ -314,7 +348,7 @@ const InvoiceForPrint = ({ data, printRef, globalSetting }) => {
                     <TableCell className="py-1">
                       <span className="font-normal text-gray-600 bill">
                         {" "}
-                        {item.title?.substring(0, 15)}
+                        {resolveTitle(item.title).substring(0, 15)}
                       </span>
                     </TableCell>
                     <TableCell className="text-center py-1">
@@ -328,7 +362,7 @@ const InvoiceForPrint = ({ data, printRef, globalSetting }) => {
                       <span className="text-right font-bold text-gray-700 bill">
                         {" "}
                         {currency}
-                        {(item.price * item.quantity).toFixed(2)}
+                        {resolveLineTotal(item).toFixed(2)}
                       </span>
                     </TableCell>
                   </TableRow>

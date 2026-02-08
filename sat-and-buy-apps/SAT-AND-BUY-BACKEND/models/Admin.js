@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
+const { STAFF_ROLES } = require("../constants/roles");
 
 const adminSchema = new mongoose.Schema(
   {
@@ -48,21 +49,16 @@ const adminSchema = new mongoose.Schema(
     role: {
       type: String,
       required: true,
-      default: "Admin",
-      enum: [
-        "Admin",
-        "Super Admin",
-        "Cashier",
-        "Manager",
-        "CEO",
-        "Driver",
-        "Security Guard",
-        "Accountant",
-      ],
+      default: STAFF_ROLES[0],
+      enum: STAFF_ROLES,
     },
     joiningData: {
       type: Date,
       required: false,
+    },
+    availabilitySlots: {
+      type: [String],
+      default: [],
     },
   },
   {

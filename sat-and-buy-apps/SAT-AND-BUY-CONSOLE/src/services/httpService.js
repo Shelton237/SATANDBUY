@@ -46,6 +46,10 @@ class HttpService {
     return this.request("put", url, data, token, headers);
   }
 
+  patch(url, data, token, headers = {}) {
+    return this.request("patch", url, data, token, headers);
+  }
+
   delete(url, token, headers = {}) {
     return this.request("delete", url, null, token, headers);
   }

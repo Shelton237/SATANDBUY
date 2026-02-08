@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   Table,
   TableHeader,
@@ -23,6 +23,7 @@ import useToggleDrawer from "@/hooks/useToggleDrawer";
 import UploadMany from "@/components/common/UploadMany";
 import NotFound from "@/components/table/NotFound";
 import ProductServices from "@/services/ProductServices";
+import UserService from "@/services/UserService";
 import PageTitle from "@/components/Typography/PageTitle";
 import { SidebarContext } from "@/context/SidebarContext";
 import ProductTable from "@/components/product/ProductTable";
@@ -54,6 +55,8 @@ const Products = () => {
     sortedField,
     setSortedField,
     limitData,
+    owner,
+    setOwner,
   } = useContext(SidebarContext);
 
   const { data, loading, error } = useAsync(() =>
@@ -63,6 +66,7 @@ const Products = () => {
       category: category,
       title: searchText,
       price: sortedField,
+      owner,
     })
   );
 
@@ -71,6 +75,38 @@ const Products = () => {
   // react hooks
   const [isCheckAll, setIsCheckAll] = useState(false);
   const [isCheck, setIsCheck] = useState([]);
+  const [vendorOptions, setVendorOptions] = useState([]);
+  const [vendorLoading, setVendorLoading] = useState(false);
+  const [vendorError, setVendorError] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchVendors = async () => {
+      setVendorLoading(true);
+      try {
+        const users = await UserService.getAllUsers();
+        if (!mounted) return;
+        const vendors = (users || []).filter(
+          (user) =>
+            user.roles?.includes("Vendeur") ||
+            user.role?.toLowerCase?.() === "vendeur"
+        );
+        setVendorOptions(vendors);
+        setVendorError("");
+      } catch (err) {
+        if (!mounted) return;
+        setVendorError(err.message || "Impossible de charger les vendeurs.");
+      } finally {
+        if (mounted) {
+          setVendorLoading(false);
+        }
+      }
+    };
+    fetchVendors();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleSelectAll = () => {
     setIsCheckAll(!isCheckAll);
@@ -83,6 +119,7 @@ const Products = () => {
   const handleResetField = () => {
     setCategory("");
     setSortedField("");
+    setOwner("");
     searchRef.current.value = "";
   };
 
@@ -188,6 +225,34 @@ const Products = () => {
               </div>
 
               <div className="flex-grow-0 md:flex-grow lg:flex-grow xl:flex-grow">
+                <Select
+                  value={owner}
+                  onChange={(e) => setOwner(e.target.value)}
+                  disabled={vendorLoading}
+                >
+                  <option value="">
+                    {vendorLoading
+                      ? "Chargement des vendeurs..."
+                      : vendorOptions.length
+                      ? "Tous les vendeurs"
+                      : "Aucun vendeur"}
+                  </option>
+                  {vendorOptions.map((vendor) => {
+                    const name =
+                      `${vendor.firstName || ""} ${vendor.lastName || ""}`.trim();
+                    return (
+                      <option key={vendor.id} value={vendor.id}>
+                        {name || vendor.username || vendor.email || vendor.id}
+                      </option>
+                    );
+                  })}
+                </Select>
+                {vendorError && (
+                  <p className="text-xs text-red-600 mt-1">{vendorError}</p>
+                )}
+              </div>
+
+              <div className="flex-grow-0 md:flex-grow lg:flex-grow xl:flex-grow">
                 <Select onChange={(e) => setSortedField(e.target.value)}>
                   <option value="All" defaultValue hidden>
                     {t("Price")}
@@ -257,6 +322,9 @@ const Products = () => {
                 <TableCell>Sale Price</TableCell>
                 <TableCell>{t("StockTbl")}</TableCell>
                 <TableCell>{t("StatusTbl")}</TableCell>
+                <TableCell className="text-center">
+                  {t("Approval") || "Approval"}
+                </TableCell>
                 <TableCell className="text-center">{t("DetailsTbl")}</TableCell>
                 <TableCell className="text-center">
                   {t("PublishedTbl")}

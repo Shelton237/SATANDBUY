@@ -7,7 +7,7 @@ import {
   TableFooter,
   TableHeader,
 } from "@windmill/react-ui";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router";
 //internal import
@@ -24,6 +24,33 @@ import ProductDrawer from "@/components/drawer/ProductDrawer";
 import Loading from "@/components/preloader/Loading";
 import PageTitle from "@/components/Typography/PageTitle";
 import { SidebarContext } from "@/context/SidebarContext";
+
+const PLACEHOLDER_IMAGE =
+  "https://res.cloudinary.com/ahossain/image/upload/v1655097002/placeholder_kvepfp.png";
+
+const normalizeTags = (value) => {
+  if (!value) return [];
+  if (Array.isArray(value)) {
+    return value.filter((item) => !!item && item.toString().trim() !== "");
+  }
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        return parsed.filter(
+          (item) => !!item && item.toString().trim() !== ""
+        );
+      }
+    } catch (err) {
+      // ignore and fallback to comma split
+    }
+    return value
+      .split(",")
+      .map((item) => item.trim())
+      .filter((item) => item !== "");
+  }
+  return [];
+};
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -54,7 +81,9 @@ const ProductDetails = () => {
     }
   }, [attribue, data?.variants, loading, lang]);
 
-  console.log("product", data);
+  const resolvedTags = useMemo(() => normalizeTags(data?.tag), [data?.tag]);
+
+  const primaryImage = data?.image?.[0];
 
   return (
     <>
@@ -69,14 +98,15 @@ const ProductDetails = () => {
         <div className="inline-block overflow-y-auto h-full align-middle transition-all transform">
           <div className="flex flex-col lg:flex-row md:flex-row w-full overflow-hidden">
             <div className="flex-shrink-0 flex items-center justify-center h-auto">
-              {data?.image[0] ? (
-                <img src={data?.image[0]} alt="product" className="h-64 w-64" />
-              ) : (
-                <img
-                  src="https://res.cloudinary.com/ahossain/image/upload/v1655097002/placeholder_kvepfp.png"
-                  alt="product"
-                />
-              )}
+              <img
+                src={primaryImage || PLACEHOLDER_IMAGE}
+                alt="product"
+                className="h-64 w-64 object-contain"
+                onError={(event) => {
+                  event.currentTarget.onerror = null;
+                  event.currentTarget.src = PLACEHOLDER_IMAGE;
+                }}
+              />
             </div>
             <div className="w-full flex flex-col p-5 md:p-8 text-left">
               <div className="mb-5 block ">
@@ -143,7 +173,7 @@ const ProductDetails = () => {
                   {showingTranslateValue(data?.category?.name)}
                 </p>
                 <div className="flex flex-row">
-                  {JSON.parse(data?.tag).map((t, i) => (
+                  {resolvedTags.map((t, i) => (
                     <span
                       key={i + 1}
                       className="bg-gray-200 mr-2 border-0 text-gray-500 rounded-full inline-flex items-center justify-center px-2 py-1 text-xs font-semibold font-serif mt-2 dark:bg-gray-700 dark:text-gray-300"

@@ -15,17 +15,28 @@ import AnimatedContent from "@/components/common/AnimatedContent";
 
 const EditProfile = () => {
   const { t } = useTranslation();
-  const {
-    state: { authData },
-  } = useContext(AdminContext);
+  const { authData } = useContext(AdminContext);
+  const adminId =
+    authData?.user?.id ||
+    authData?.user?._id ||
+    authData?._id ||
+    authData?.id ||
+    null;
 
   const { register, handleSubmit, onSubmit, errors, imageUrl, setImageUrl } =
-    useStaffSubmit(authData._id);
+    useStaffSubmit(adminId);
+
+  const isLoading = !adminId;
 
   return (
     <>
       <PageTitle> {t("EditProfile")} </PageTitle>
       <AnimatedContent>
+        {isLoading ? (
+          <div className="p-6 text-center text-gray-500 dark:text-gray-300">
+            {t("Loading")}
+          </div>
+        ) : (
         <div className="container p-6 mx-auto bg-white  dark:bg-gray-800 dark:text-gray-200 rounded-lg">
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="p-6 flex-grow scrollbar-hide w-full max-h-full">
@@ -33,7 +44,7 @@ const EditProfile = () => {
                 <LabelArea label={t("ProfilePicture")} />
                 <div className="col-span-8 sm:col-span-4">
                   <Uploader
-                    imageUrl={imageUrl}
+                    imageUrl={imageUrl || authData?.user?.image || []}
                     setImageUrl={setImageUrl}
                     folder="customer"
                   />
@@ -49,6 +60,7 @@ const EditProfile = () => {
                     label="Name"
                     name="name"
                     type="text"
+                    defaultValue={authData?.user?.name || ""}
                     placeholder="Your Name"
                   />
                   <Error errorName={errors.name} />
@@ -64,6 +76,7 @@ const EditProfile = () => {
                     label="Email"
                     name="email"
                     type="text"
+                    defaultValue={authData?.user?.email || ""}
                     placeholder="Email"
                   />
                   <Error errorName={errors.email} />
@@ -79,6 +92,7 @@ const EditProfile = () => {
                     label="Contact Number"
                     name="phone"
                     type="text"
+                    defaultValue={authData?.user?.phone || ""}
                     placeholder="Contact Number"
                   />
                   <Error errorName={errors.phone} />
@@ -88,7 +102,12 @@ const EditProfile = () => {
               <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
                 <LabelArea label={t("ProfileYourRole")} />
                 <div className="col-span-8 sm:col-span-4">
-                  <SelectRole register={register} label="Role" name="role" />
+                  <SelectRole
+                    register={register}
+                    label="Role"
+                    name="role"
+                    defaultValue={authData?.user?.role}
+                  />
                   <Error errorName={errors.role} />
                 </div>
               </div>
@@ -101,6 +120,7 @@ const EditProfile = () => {
             </div>
           </form>
         </div>
+        )}
       </AnimatedContent>
     </>
   );

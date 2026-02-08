@@ -1,3 +1,4 @@
+import { useContext, useState } from "react";
 import {
   Avatar,
   Badge,
@@ -19,12 +20,24 @@ import ShowHideButton from "@/components/table/ShowHideButton";
 import Tooltip from "@/components/tooltip/Tooltip";
 import useToggleDrawer from "@/hooks/useToggleDrawer";
 import useUtilsFunction from "@/hooks/useUtilsFunction";
+import ProductServices from "@/services/ProductServices";
+import { SidebarContext } from "@/context/SidebarContext";
+import { AdminContext } from "@/context/AdminContext";
+import { notifyError, notifySuccess } from "@/utils/toast";
 
 //internal import
 
 const ProductTable = ({ products, isCheck, setIsCheck }) => {
   const { title, serviceId, handleModalOpen, handleUpdate } = useToggleDrawer();
   const { currency, showingTranslateValue, getNumberTwo } = useUtilsFunction();
+  const { setIsUpdate } = useContext(SidebarContext);
+  const { authData } = useContext(AdminContext);
+  const [approvalState, setApprovalState] = useState({
+    id: null,
+    action: null,
+  });
+  const isVendor = authData?.user?.role === "Vendeur";
+  const canModerate = !isVendor;
 
   const handleClick = (e) => {
     const { id, checked } = e.target;
@@ -33,6 +46,30 @@ const ProductTable = ({ products, isCheck, setIsCheck }) => {
     setIsCheck([...isCheck, id]);
     if (!checked) {
       setIsCheck(isCheck.filter((item) => item !== id));
+    }
+  };
+
+  const approvalMeta = {
+    approved: { type: "success", label: "Approuve" },
+    pending: { type: "warning", label: "En attente" },
+    rejected: { type: "danger", label: "Rejete" },
+  };
+
+  const handleApprovalChange = async (product, status) => {
+    if (!canModerate) return;
+    try {
+      setApprovalState({ id: product._id, action: status });
+      await ProductServices.updateApprovalStatus(product._id, { status });
+      notifySuccess(
+        status === "approved"
+          ? "Produit approuve avec succes."
+          : "Statut de validation mis a jour."
+      );
+      setIsUpdate(true);
+    } catch (err) {
+      notifyError(err?.message || "Impossible de mettre a jour la validation.");
+    } finally {
+      setApprovalState({ id: null, action: null });
     }
   };
 
@@ -135,6 +172,48 @@ const ProductTable = ({ products, isCheck, setIsCheck }) => {
             <TableCell className="text-center">
               <ShowHideButton id={product._id} status={product.status} />
               {/* {product.status} */}
+            </TableCell>
+            <TableCell className="text-center">
+              <Badge type={approvalMeta[product.approvalStatus]?.type || "primary"}>
+                {approvalMeta[product.approvalStatus]?.label ||
+                  product.approvalStatus}
+              </Badge>
+              {canModerate && (
+                <div className="flex justify-center gap-2 mt-2">
+                  {product.approvalStatus !== "approved" && (
+                    <button
+                      type="button"
+                      onClick={() => handleApprovalChange(product, "approved")}
+                      disabled={
+                        approvalState.id === product._id &&
+                        approvalState.action === "approved"
+                      }
+                      className="px-3 py-1 text-xs font-semibold text-white bg-emerald-600 rounded disabled:opacity-60"
+                    >
+                      {approvalState.id === product._id &&
+                      approvalState.action === "approved"
+                        ? t("Processing") || "..."
+                        : t("Approve") || "Approve"}
+                    </button>
+                  )}
+                  {product.approvalStatus !== "rejected" && (
+                    <button
+                      type="button"
+                      onClick={() => handleApprovalChange(product, "rejected")}
+                      disabled={
+                        approvalState.id === product._id &&
+                        approvalState.action === "rejected"
+                      }
+                      className="px-3 py-1 text-xs font-semibold text-white bg-red-500 rounded disabled:opacity-60"
+                    >
+                      {approvalState.id === product._id &&
+                      approvalState.action === "rejected"
+                        ? t("Processing") || "..."
+                        : t("Reject") || "Reject"}
+                    </button>
+                  )}
+                </div>
+              )}
             </TableCell>
             <TableCell>
               <EditDeleteButton

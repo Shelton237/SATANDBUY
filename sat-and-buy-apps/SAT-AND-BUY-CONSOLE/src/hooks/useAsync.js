@@ -18,6 +18,7 @@ const useAsync = (asyncFunction) => {
     startDate,
     endDate,
     method,
+    owner,
     isUpdate,
     setIsUpdate,
     currentPage,
@@ -33,7 +34,13 @@ const useAsync = (asyncFunction) => {
       try {
         const res = await asyncFunction({ cancelToken: source.token });
         if (!unmounted) {
-          setData(res);
+          const isAxiosResponse =
+            res &&
+            typeof res === "object" &&
+            "data" in res &&
+            ("status" in res || "headers" in res);
+          const payload = isAxiosResponse ? res.data : res;
+          setData(payload);
           setError("");
           setLoading(false);
         }
@@ -66,6 +73,7 @@ const useAsync = (asyncFunction) => {
     zone,
     time,
     method,
+    owner,
     source,
     limitData,
     startDate,

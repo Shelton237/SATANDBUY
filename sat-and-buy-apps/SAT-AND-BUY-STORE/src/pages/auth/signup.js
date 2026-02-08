@@ -4,13 +4,12 @@ import { FiLock, FiMail, FiUser } from "react-icons/fi";
 import Layout from "@layout/Layout";
 import Error from "@components/form/Error";
 import InputArea from "@components/form/InputArea";
-import useLoginSubmit from "@hooks/useLoginSubmit";
 import BottomNavigation from "@components/login/BottomNavigation";
-import Link from "next/link";
+import useSignupSubmit from "@hooks/useSignupSubmit";
 
 const SignUp = () => {
   const { handleSubmit, submitHandler, register, errors, loading } =
-    useLoginSubmit();
+    useSignupSubmit();
 
   return (
     <Layout title="Signup" description="this is sign up page">
@@ -30,14 +29,17 @@ const SignUp = () => {
                   className="flex flex-col justify-center mb-6"
                 >
                   <div className="grid grid-cols-1 gap-5">
-                    {/* <div className="form-group">
+                    <div className="form-group">
                       <InputArea
                         register={register}
-                        label="Name"
+                        label="Nom complet"
                         name="name"
                         type="text"
-                        placeholder="Full Name"
+                        placeholder="Ex. Lionel Messi"
                         Icon={FiUser}
+                        rules={{
+                          required: "Le nom est requis.",
+                        }}
                       />
 
                       <Error errorName={errors.name} />
@@ -49,39 +51,56 @@ const SignUp = () => {
                         label="Email"
                         name="email"
                         type="email"
-                        placeholder="Email"
+                        placeholder="email@exemple.com"
                         Icon={FiMail}
+                        rules={{
+                          required: "L'email est requis.",
+                        }}
                       />
                       <Error errorName={errors.email} />
                     </div>
+
                     <div className="form-group">
                       <InputArea
                         register={register}
-                        label="Password"
+                        label="Mot de passe"
                         name="password"
                         type="password"
-                        placeholder="Password"
+                        placeholder="••••••"
                         Icon={FiLock}
+                        rules={{
+                          required: "Le mot de passe est requis.",
+                          minLength: {
+                            value: 6,
+                            message: "6 caractères minimum.",
+                          },
+                        }}
                       />
 
                       <Error errorName={errors.password} />
-                    </div> */}
+                    </div>
 
-                    {/* <div className="flex items-center justify-between">
-                      <div className="flex ms-auto">
-                        <Link
-                          href="/auth/forget-password"
-                          className="text-end text-sm text-heading ps-3 underline hover:no-underline focus:outline-none"
-                        >
-                          Forgot password?
-                        </Link>
-                      </div>
-                    </div> */}
-                    {/* {loading ? (
+                    <div className="form-group">
+                      <InputArea
+                        register={register}
+                        label="Confirmez le mot de passe"
+                        name="confirmPassword"
+                        type="password"
+                        placeholder="••••••"
+                        Icon={FiLock}
+                        rules={{
+                          required: "Confirmez votre mot de passe.",
+                        }}
+                      />
+
+                      <Error errorName={errors.confirmPassword} />
+                    </div>
+
+                    {loading ? (
                       <button
-                        disabled={loading}
-                        type="submit"
-                        className="md:text-sm leading-5 inline-flex items-center cursor-pointer transition ease-in-out duration-300 font-medium text-center justify-center border-0 border-transparent rounded-md placeholder-white focus-visible:outline-none focus:outline-none bg-emerald-500 text-white px-5 md:px-6 lg:px-8 py-2 md:py-3 lg:py-3 hover:text-white hover:bg-emerald-600 h-12 mt-1 text-sm lg:text-sm w-full sm:w-auto"
+                        disabled
+                        type="button"
+                        className="md:text-sm leading-5 inline-flex items-center cursor-pointer transition ease-in-out duration-300 font-medium text-center justify-center border-0 border-transparent rounded-md placeholder-white focus-visible:outline-none focus:outline-none bg-emerald-500 text-white px-5 md:px-6 lg:px-8 py-2 md:py-3 lg:py-3 h-12 mt-1 text-sm lg:text-sm w-full sm:w-auto"
                       >
                         <img
                           src="/loader/spinner.gif"
@@ -90,25 +109,23 @@ const SignUp = () => {
                           height={10}
                         />
                         <span className="font-serif ml-2 font-light">
-                          Processing
+                          Traitement…
                         </span>
                       </button>
                     ) : (
                       <button
-                        disabled={loading}
                         type="submit"
                         className="w-full text-center py-3 rounded bg-emerald-500 text-white hover:bg-emerald-600 transition-all focus:outline-none my-1"
                       >
-                        Register
+                        Créer mon compte
                       </button>
-                    )} */}
+                    )}
                   </div>
                 </form>
                 <BottomNavigation
                   desc
                   route={"/auth/login"}
                   pageName={"Login"}
-                  loginTitle="Sign Up"
                 />
               </div>
             </div>

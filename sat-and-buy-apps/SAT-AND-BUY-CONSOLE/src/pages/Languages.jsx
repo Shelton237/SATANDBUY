@@ -11,7 +11,7 @@ import {
   TableHeader,
 } from "@windmill/react-ui";
 import { FiPlus } from "react-icons/fi";
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { FiEdit, FiTrash2 } from "react-icons/fi";
 //internal import
@@ -31,12 +31,25 @@ import LanguageDrawer from "@/components/drawer/LanguageDrawer";
 import MainDrawer from "@/components/drawer/MainDrawer";
 import AnimatedContent from "@/components/common/AnimatedContent";
 
+const SUPPORTED_LANGUAGE_CODES = ["en", "fr"];
+
 const Languages = () => {
   const { toggleDrawer } = useContext(SidebarContext);
 
   const { allId, handleUpdateMany, handleDeleteMany } = useToggleDrawer();
-  const { data, loading, error } = useAsync(LanguageServices.getAllLanguages);
-  // console.log("data-language", data);
+  const {
+    data: fetchedLanguages,
+    loading,
+    error,
+  } = useAsync(LanguageServices.getAllLanguages);
+
+  const filteredLanguages = useMemo(() => {
+    if (!Array.isArray(fetchedLanguages)) return [];
+    return fetchedLanguages.filter((language) =>
+      SUPPORTED_LANGUAGE_CODES.includes(language?.iso_code)
+    );
+  }, [fetchedLanguages]);
+
   const {
     totalResults,
     resultsPerPage,
@@ -44,20 +57,23 @@ const Languages = () => {
     languageRef,
     handleSubmitLanguage,
     handleChangePage,
-  } = useFilter(data);
+  } = useFilter(filteredLanguages);
 
   const [isCheckAll, setIsCheckAll] = useState(false);
   const [isCheck, setIsCheck] = useState([]);
 
   const handleSelectAll = () => {
     setIsCheckAll(!isCheckAll);
-    setIsCheck(data?.map((li) => li._id));
+    setIsCheck(filteredLanguages?.map((li) => li._id));
     if (isCheckAll) {
       setIsCheck([]);
     }
   };
 
   const { t } = useTranslation();
+
+  const canAddLanguage =
+    filteredLanguages.length < SUPPORTED_LANGUAGE_CODES.length;
 
   return (
     <>
@@ -114,11 +130,15 @@ const Languages = () => {
                   {t("Delete")}
                 </Button>
               </div>
-              <Button onClick={toggleDrawer} className="rounded-md h-12 w-64">
+              <Button
+                onClick={toggleDrawer}
+                disabled={!canAddLanguage}
+                className="rounded-md h-12 w-64"
+              >
                 <span className="mr-2">
                   <FiPlus />
                 </span>
-                Add language
+                {canAddLanguage ? "Add language" : "Limit reached"}
               </Button>
             </form>
           </CardBody>
@@ -131,7 +151,7 @@ const Languages = () => {
       ) : error ? (
         <span className="text-center mx-auto text-red-500">{error}</span>
       ) : (
-        data.length !== 0 && (
+        filteredLanguages.length !== 0 && (
           <TableContainer className="mb-8 rounded-b-lg">
             <Table>
               <TableHeader>
@@ -174,7 +194,7 @@ const Languages = () => {
           </TableContainer>
         )
       )}
-      {!loading && data.length === 0 && !error && (
+      {!loading && filteredLanguages.length === 0 && !error && (
         <NotFound title="Sorry, There are no languages right now." />
       )}
     </>

@@ -1,4 +1,4 @@
-import requests from "./httpServices";
+import requests from "./httpServices.js";
 
 const CustomerServices = {
   loginCustomer: async (body) => {
@@ -11,6 +11,10 @@ const CustomerServices = {
 
   registerCustomer: async (token, body) => {
     return requests.post(`/customer/register/${token}`, body);
+  },
+
+  registerCustomerDirect: async (body) => {
+    return requests.post("/customer/register", body);
   },
 
   signUpWithOauthProvider: async (body) => {
@@ -38,12 +42,18 @@ const CustomerServices = {
   },
 
   getShippingAddress: async ({ userId = "" }) => {
+    if (!userId) {
+      return Promise.resolve({ shippingAddress: null });
+    }
     return requests.get(`/customer/shipping/address/${userId}`);
   },
 
   addShippingAddress: async ({ userId = "", shippingAddressData }) => {
+    if (!userId) {
+      return Promise.reject(new Error("User ID is required to save address"));
+    }
     return requests.post(
-      `customer/shipping/address/${userId}`,
+      `/customer/shipping/address/${userId}`,
       shippingAddressData
     );
   },

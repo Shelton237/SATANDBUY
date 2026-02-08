@@ -16,8 +16,8 @@ import cookies from "js-cookie";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import AuthService from "@/services/AuthService";
-import de from "@/assets/img/de.svg";
 import en from "@/assets/img/us.svg";
+import fr from "@/assets/img/fr.svg";
 import ellipse from "@/assets/img/icons/ellipse.svg";
 import { SidebarContext } from "@/context/SidebarContext";
 import useNotification from "@/hooks/useNotification";
@@ -179,14 +179,14 @@ const Header = () => {
             <li className="changeLanguage">
               <div className="dropdown">
                 <button className="dropbtn focus:outline-none">
-                  {currentLanguageCode === "de" ? (
-                    <img src={de} width={16} alt="lang" className="mx-2" />
+                  {currentLanguageCode === "fr" ? (
+                    <img src={fr} width={16} alt="lang" className="mx-2" />
                   ) : (
                     <img src={en} className="mx-2" alt="lang" width={16} />
                   )}
-                  {currentLanguageCode === "de" ? (
+                  {currentLanguageCode === "fr" ? (
                     <span className="text-gray-700 dark:text-gray-400">
-                      GERMAN
+                      FRANÇAIS
                     </span>
                   ) : (
                     <span className="text-gray-700 dark:text-gray-400">
@@ -203,10 +203,10 @@ const Header = () => {
                     <img src={en} width={16} alt="lang" /> English{" "}
                   </div>
                   <div
-                    onClick={() => handleLanguageChange("de")}
+                    onClick={() => handleLanguageChange("fr")}
                     className="focus:outline-none cursor-pointer"
                   >
-                    <img src={de} width={16} alt="lang" /> German
+                    <img src={fr} width={16} alt="lang" /> Français
                   </div>
                 </div>
               </div>

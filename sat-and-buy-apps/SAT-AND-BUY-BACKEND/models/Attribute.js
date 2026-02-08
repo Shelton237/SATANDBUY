@@ -12,21 +12,33 @@ const attributeSchema = new mongoose.Schema(
     },
     variants: [
       {
-        name: {
-          type: Object,
-          required: false,
-        },
-        status: {
-          type: String,
-          lowercase: true,
-          enum: ["show", "hide"],
-          default: "show",
+    name: {
+      type: Object,
+      required: false,
+    },
+    hexCode: {
+      type: String,
+      required: false,
+    },
+    description: {
+      type: String,
+      required: false,
+    },
+    logoUrl: {
+      type: String,
+      required: false,
+    },
+    status: {
+      type: String,
+      lowercase: true,
+      enum: ["show", "hide"],
+      default: "show",
         },
       },
     ],
     option: {
       type: String,
-      enum: ["Dropdown", "Radio", "Checkbox"],
+      enum: ["Dropdown", "Radio", "Checkbox", "MultiSelect"],
     },
     type: {
       type: String,

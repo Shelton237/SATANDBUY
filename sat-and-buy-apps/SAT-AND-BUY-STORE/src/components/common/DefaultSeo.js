@@ -16,15 +16,15 @@ const DefaultSeo = () => {
     <NextSeo
       title={
         globalSetting?.meta_title ||
-        "KachaBazar - React Grocery & Organic Food Store e-commerce Template"
+        "Sat & Buy – Boutique & services énergétiques"
       }
       openGraph={{
         type: "website",
         locale: "en_IE",
-        url: globalSetting?.meta_url || "https://kachabazar-store.vercel.app/",
+        url: globalSetting?.meta_url || "https://satandbuy.dreamsdigital.cm/",
         site_name:
           globalSetting?.meta_title ||
-          "KachaBazar - React Grocery & Organic Food Store e-commerce Template",
+          "Sat & Buy – Boutique & services énergétiques",
       }}
       twitter={{
         handle: "@handle",
@@ -42,6 +42,10 @@ const DefaultSeo = () => {
           content: "yes",
         },
         {
+          name: "mobile-web-app-capable",
+          content: "yes",
+        },
+        {
           name: "theme-color",
           content: "#ffffff",
         },
@@ -49,11 +53,15 @@ const DefaultSeo = () => {
       additionalLinkTags={[
         {
           rel: "apple-touch-icon",
-          href: "/icon-192x192.png",
+          href: "/sat-and-buy-favicon.png",
         },
         {
           rel: "manifest",
           href: "/manifest.json",
+        },
+        {
+          rel: "icon",
+          href: "/sat-and-buy-favicon.png",
         },
       ]}
     />

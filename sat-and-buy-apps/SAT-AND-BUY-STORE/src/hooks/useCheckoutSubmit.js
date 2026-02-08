@@ -8,17 +8,40 @@ import useRazorpay from "react-razorpay";
 import { CardElement, useElements, useStripe } from "@stripe/react-stripe-js";
 
 //internal import
-import useAsync from "./useAsync";
-import { getUserSession } from "@lib/auth";
 import { UserContext } from "@context/UserContext";
 import OrderServices from "@services/OrderServices";
 import CouponServices from "@services/CouponServices";
 import { notifyError, notifySuccess } from "@utils/toast";
 import CustomerServices from "@services/CustomerServices";
 import NotificationServices from "@services/NotificationServices";
+import ShippingRateServices from "@services/ShippingRateServices";
+
+const useOptionalStripe = () => {
+  try {
+    return useStripe();
+  } catch (err) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("Stripe n'est pas encore initialise :", err?.message);
+    }
+    return null;
+  }
+};
+
+const useOptionalElements = () => {
+  try {
+    return useElements();
+  } catch (err) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("Stripe Elements n'est pas disponible :", err?.message);
+    }
+    return null;
+  }
+};
 
 const useCheckoutSubmit = (storeSetting) => {
-  const { dispatch } = useContext(UserContext);
+  const router = useRouter();
+  const { state, dispatch } = useContext(UserContext);
+  const userInfo = state?.userInfo;
 
   const [error, setError] = useState("");
   const [total, setTotal] = useState("");
@@ -31,38 +54,38 @@ const useCheckoutSubmit = (storeSetting) => {
   const [isCheckoutSubmit, setIsCheckoutSubmit] = useState(false);
   const [isCouponApplied, setIsCouponApplied] = useState(false);
   const [useExistingAddress, setUseExistingAddress] = useState(false);
+  const [hasPrefilledAddress, setHasPrefilledAddress] = useState(false);
   const [isCouponAvailable, setIsCouponAvailable] = useState(false);
+  const [shippingData, setShippingData] = useState({
+    data: null,
+    loading: true,
+    error: "",
+  });
+  const [shippingRates, setShippingRates] = useState([]);
+  const [shippingRateLoading, setShippingRateLoading] = useState(false);
+  const [selectedShippingRate, setSelectedShippingRate] = useState(null);
 
-  const router = useRouter();
-  const stripe = useStripe();
-  const elements = useElements();
+  const stripe = useOptionalStripe();
+  const elements = useOptionalElements();
   const couponRef = useRef("");
   const [Razorpay] = useRazorpay();
   const { isEmpty, emptyCart, items, cartTotal } = useCart();
 
-  const userInfo = getUserSession();
-
-  const { data, loading } = useAsync(() =>
-    CustomerServices.getShippingAddress({
-      userId: userInfo?.id,
-    })
-  );
-
   const hasShippingAddress =
-    !loading &&
-    data?.shippingAddress &&
-    Object.keys(data?.shippingAddress)?.length > 0;
-
-  // console.log("storeSetting", storeSetting);
-
-  // console.log("res", data);
+    !shippingData.loading &&
+    shippingData?.data?.shippingAddress &&
+    Object.keys(shippingData?.data?.shippingAddress)?.length > 0;
+  const savedAddress = shippingData?.data?.shippingAddress || null;
 
   const {
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
   } = useForm();
+  const watchedCountry = watch("country");
+  const watchedCity = watch("city");
 
   useEffect(() => {
     if (Cookies.get("couponInfo")) {
@@ -73,7 +96,49 @@ const useCheckoutSubmit = (storeSetting) => {
       setMinimumAmount(coupon.minimumAmount);
     }
     setValue("email", userInfo?.email);
-  }, [isCouponApplied]);
+  }, [isCouponApplied, userInfo?.email, setValue]);
+
+  useEffect(() => {
+    if (hasShippingAddress && !hasPrefilledAddress) {
+      setUseExistingAddress(true);
+      fillShippingForm(savedAddress);
+      setHasPrefilledAddress(true);
+    }
+    if (!hasShippingAddress && hasPrefilledAddress) {
+      setHasPrefilledAddress(false);
+    }
+  }, [hasShippingAddress, hasPrefilledAddress, savedAddress]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!userInfo?.id) {
+      setShippingData({ data: null, loading: false, error: "" });
+      return;
+    }
+    setShippingData((prev) => ({ ...prev, loading: true, error: "" }));
+    (async () => {
+      try {
+        const res = await CustomerServices.getShippingAddress({
+          userId: userInfo.id,
+        });
+        if (!cancelled) {
+          setShippingData({ data: res, loading: false, error: "" });
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setShippingData({
+            data: null,
+            loading: false,
+            error: err?.message || "Impossible de charger l'adresse.",
+          });
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userInfo?.id]);
 
   //remove coupon if total value less then minimum amount of coupon
   useEffect(() => {
@@ -82,6 +147,55 @@ const useCheckoutSubmit = (storeSetting) => {
       Cookies.remove("couponInfo");
     }
   }, [minimumAmount, total]);
+
+  useEffect(() => {
+    if (!watchedCountry) {
+      setShippingRates([]);
+      setSelectedShippingRate(null);
+      setShippingCost(0);
+      setShippingRateLoading(false);
+      return;
+    }
+
+    let active = true;
+    setShippingRateLoading(true);
+
+    ShippingRateServices.getRates({
+      country: watchedCountry,
+      city: watchedCity,
+    })
+      .then((rates) => {
+        if (!active) return;
+        setShippingRates(rates);
+        if (
+          !rates.length ||
+          (selectedShippingRate &&
+            !rates.find((rate) => rate._id === selectedShippingRate?._id))
+        ) {
+          setSelectedShippingRate(null);
+          setShippingCost(0);
+        }
+      })
+      .catch(() => {
+        if (!active) return;
+        setShippingRates([]);
+        setSelectedShippingRate(null);
+        setShippingCost(0);
+      })
+      .finally(() => {
+        if (active) setShippingRateLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [watchedCountry, watchedCity]);
+
+  useEffect(() => {
+    if (shippingRates.length && !selectedShippingRate) {
+      handleShippingCost(shippingRates[0]);
+    }
+  }, [shippingRates, selectedShippingRate]);
 
   //calculate total and discount value
   //calculate total and discount value
@@ -109,12 +223,26 @@ const useCheckoutSubmit = (storeSetting) => {
     setTotal(totalValue);
   }, [cartTotal, shippingCost, discountPercentage]);
 
+  useEffect(() => {
+    if (!userInfo?.email) return;
+    setValue("email", userInfo.email);
+  }, [setValue, userInfo?.email]);
+
+  useEffect(() => {
+    if (userInfo === undefined) return;
+    if (!userInfo?.id) {
+      router.replace("/auth/login?redirectUrl=%2Fcheckout");
+    }
+  }, [router, userInfo]);
+
   const submitHandler = async (data) => {
-    // console.log("data", data);
-    // return;
     try {
-      // dispatch({ type: "SAVE_SHIPPING_ADDRESS", payload: data });
-      // Cookies.set("shippingAddress", JSON.stringify(data));
+      if (!userInfo?.id) {
+        notifyError("Veuillez vous connecter pour valider votre commande.");
+        router.push("/auth/login?redirectUrl=%2Fcheckout");
+        return;
+      }
+
       setIsCheckoutSubmit(true);
       setError("");
 
@@ -130,7 +258,8 @@ const useCheckoutSubmit = (storeSetting) => {
 
       let orderInfo = {
         user_info: userDetails,
-        shippingOption: data.shippingOption,
+        shippingOption:
+          selectedShippingRate?.label || data.shippingOption,
         paymentMethod: data.paymentMethod,
         status: "Pending",
         cart: items,
@@ -138,18 +267,27 @@ const useCheckoutSubmit = (storeSetting) => {
         shippingCost: shippingCost,
         discount: discountAmount,
         total: total,
+        shippingRate: selectedShippingRate
+          ? {
+              id: selectedShippingRate._id,
+              label: selectedShippingRate.label,
+              country: selectedShippingRate.country,
+              city: selectedShippingRate.city,
+              estimatedTime: selectedShippingRate.estimatedTime,
+              description: selectedShippingRate.description,
+            }
+          : null,
       };
 
       await CustomerServices.addShippingAddress({
-        userId: userInfo?.id,
+        userId: userInfo.id,
         shippingAddressData: {
-          name: data.firstName + " " + data.lastName,
+          name: `${data.firstName || ""} ${data.lastName || ""}`.trim(),
           contact: data.contact,
           email: userInfo?.email,
           address: data.address,
           country: data.country,
           city: data.city,
-          // area: data.area,
           zipCode: data.zipCode,
         },
       });
@@ -350,34 +488,49 @@ const useCheckoutSubmit = (storeSetting) => {
     }
   };
 
-  const handleShippingCost = (value) => {
-    // console.log("handleShippingCost", value);
-    setShippingCost(Number(value));
-  };
+  function handleShippingCost(rate, updateField = true) {
+    if (!rate) return;
+    const costValue = Number(rate.cost ?? rate);
+    if (rate?._id) {
+      setSelectedShippingRate(rate);
+    }
+    setShippingCost(Number.isNaN(costValue) ? 0 : costValue);
+    if (updateField && rate?.label) {
+      setValue("shippingOption", rate.label);
+    }
+  }
 
   //handle default shipping address
+  const fillShippingForm = (address) => {
+    if (!address) return;
+    const [firstName = "", ...rest] = (address.name || "").split(" ");
+    const lastName = rest.join(" ");
+    setValue("firstName", firstName);
+    setValue("lastName", lastName);
+    setValue("address", address.address);
+    setValue("contact", address.contact);
+    setValue("city", address.city);
+    setValue("country", address.country);
+    setValue("zipCode", address.zipCode);
+  };
+
+  const clearShippingForm = () => {
+    setValue("firstName", "");
+    setValue("lastName", "");
+    setValue("address", "");
+    setValue("contact", "");
+    setValue("city", "");
+    setValue("country", "");
+    setValue("zipCode", "");
+  };
+
   const handleDefaultShippingAddress = (value) => {
     // console.log("handle default shipping", value);
     setUseExistingAddress(value);
     if (value) {
-      const address = data?.shippingAddress;
-      setValue("firstName", address.name);
-
-      setValue("address", address.address);
-      setValue("contact", address.contact);
-      // setValue("email", address.email);
-      setValue("city", address.city);
-      setValue("country", address.country);
-      setValue("zipCode", address.zipCode);
+      fillShippingForm(savedAddress);
     } else {
-      setValue("firstName");
-      setValue("lastName");
-      setValue("address");
-      setValue("contact");
-      // setValue("email");
-      setValue("city");
-      setValue("country");
-      setValue("zipCode");
+      clearShippingForm();
     }
   };
   const handleCouponCode = async (e) => {
@@ -446,6 +599,9 @@ const useCheckoutSubmit = (storeSetting) => {
     discountPercentage,
     discountAmount,
     shippingCost,
+    shippingRates,
+    shippingRateLoading,
+    selectedShippingRate,
     isCheckoutSubmit,
     isCouponApplied,
     useExistingAddress,

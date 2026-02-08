@@ -1,6 +1,5 @@
-import { useSession } from "next-auth/react";
 import { useForm } from "react-hook-form";
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 
 //internal import
 import Label from "@components/form/Label";
@@ -12,11 +11,13 @@ import CustomerServices from "@services/CustomerServices";
 import Uploader from "@components/image-uploader/Uploader";
 import { notifySuccess, notifyError } from "@utils/toast";
 import useUtilsFunction from "@hooks/useUtilsFunction";
+import { UserContext } from "@context/UserContext";
+import { persistUserSession } from "@lib/auth";
 
 const UpdateProfile = () => {
   const [imageUrl, setImageUrl] = useState("");
   const [loading, setLoading] = useState(false);
-  const { data: session, update } = useSession();
+  const { state, dispatch } = useContext(UserContext);
 
   const { storeCustomizationSetting } = useGetSetting();
   const { showingTranslateValue } = useUtilsFunction();
@@ -42,38 +43,28 @@ const UpdateProfile = () => {
     };
     try {
       const res = await CustomerServices.updateCustomer(
-        session?.user?.id,
+        state?.userInfo?._id,
         userData
       );
       setLoading(false);
-      //session update
-      update({
-        ...session,
-        user: {
-          ...session.user,
-          name: data.name,
-          address: data.address,
-          phone: data.phone,
-          image: data.image,
-        },
-      });
+      persistUserSession(res);
+      dispatch({ type: "USER_LOGIN", payload: res });
       notifySuccess("Profile Update Successfully!");
-      // window.location.reload();
     } catch (error) {
       setLoading(false);
-      notifyError(err?.response?.data?.message || err?.message);
+      notifyError(error?.response?.data?.message || error?.message);
     }
   };
 
   useEffect(() => {
-    if (session?.user) {
-      setValue("name", session?.user?.name);
-      setValue("email", session?.user?.email);
-      setValue("address", session?.user?.address);
-      setValue("phone", session?.user?.phone);
-      setImageUrl(session?.user?.image);
+    if (state?.userInfo) {
+      setValue("name", state.userInfo.name);
+      setValue("email", state.userInfo.email);
+      setValue("address", state.userInfo.address);
+      setValue("phone", state.userInfo.phone);
+      setImageUrl(state.userInfo.image);
     }
-  }, [session?.user]);
+  }, [state?.userInfo]);
 
   return (
     <Dashboard
@@ -161,7 +152,7 @@ const UpdateProfile = () => {
                           name="email"
                           type="email"
                           readOnly={true}
-                          defaultValue={session?.user?.email}
+                          defaultValue={state?.userInfo?.email}
                           label={showingTranslateValue(
                             storeCustomizationSetting?.dashboard?.user_email
                           )}

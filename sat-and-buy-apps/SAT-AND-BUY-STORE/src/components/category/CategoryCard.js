@@ -5,6 +5,7 @@ import {
   IoChevronDownOutline,
   IoChevronForwardOutline,
   IoRemoveSharp,
+  IoCubeOutline,
 } from "react-icons/io5";
 
 //internal import
@@ -52,6 +53,12 @@ const CategoryCard = ({ title, icon, nested, id }) => {
     setIsLoading(!isLoading);
   };
 
+  const hasImageSource =
+    typeof icon === "string" &&
+    (icon.startsWith("http://") ||
+      icon.startsWith("https://") ||
+      icon.startsWith("/"));
+
   return (
     <>
       <a
@@ -59,15 +66,12 @@ const CategoryCard = ({ title, icon, nested, id }) => {
         className="p-2 flex items-center rounded-md hover:bg-gray-50 w-full hover:text-emerald-600"
         role="button"
       >
-        {icon ? (
+        {hasImageSource ? (
           <Image src={icon} width={18} height={18} alt="Category" />
         ) : (
-          <Image
-            src="https://res.cloudinary.com/ahossain/image/upload/v1655097002/placeholder_kvepfp.png"
-            width={18}
-            height={18}
-            alt="category"
-          />
+          <span className="w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <IoCubeOutline />
+          </span>
         )}
 
         <div className="inline-flex items-center justify-between ml-3 text-sm font-medium w-full hover:text-emerald-600">

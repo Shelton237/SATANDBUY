@@ -203,9 +203,12 @@ const CategoryDrawer = ({ id, data, onClose, refetch }) => {
         setImageUrl(category.icon || "");
 
         if (category.parentId) {
-          setChecked(Number(category.parentId));
-          const parent = findCategory(data[0], Number(category.parentId));
-          setSelectCategoryName(showingTranslateValue(parent?.name?.fr));
+          const parentKey = category.parentId?.toString();
+          setChecked(parentKey);
+          const parent = findCategory(data[0], parentKey);
+          setSelectCategoryName(
+            parent ? showingTranslateValue(parent?.name) : t("RootCategory")
+          );
         }
         else {
           setChecked(null);

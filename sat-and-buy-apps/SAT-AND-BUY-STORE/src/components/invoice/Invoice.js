@@ -45,7 +45,7 @@ const Invoice = ({ data, printRef, globalSetting, currency }) => {
                 <Image
                   width={110}
                   height={40}
-                  src="/logo/logo-color.svg"
+                  src="/logo/logo-text.png"
                   alt="logo"
                 />
               </Link>

@@ -7,6 +7,8 @@ const {
   createPaymentIntent,
   addRazorpayOrder,
   createOrderByRazorPay,
+  getCustomerOrderBoard,
+  confirmOrderDelivery,
 } = require("../controller/customerOrderController");
 
 //add a order
@@ -20,6 +22,12 @@ router.post("/add/razorpay", addRazorpayOrder);
 
 //add a order by razorpay
 router.post("/create/razorpay", createOrderByRazorPay);
+
+// get kanban board for connected customer
+router.get("/board", getCustomerOrderBoard);
+
+// confirm delivery
+router.put("/:id/confirm-delivery", confirmOrderDelivery);
 
 //get a order by id
 router.get("/:id", getOrderById);

@@ -99,6 +99,7 @@ const AttributeDrawer = ({ id }) => {
                   </option>
                   <option value="Dropdown">{t("Dropdown")}</option>
                   <option value="Radio">{t("Radio")}</option>
+                  <option value="MultiSelect">{t("MultiSelect")}</option>
                   {/* <option value="Checkbox">Checkbox</option> */}
                 </Select>
                 <Error errorName={errors.option} />

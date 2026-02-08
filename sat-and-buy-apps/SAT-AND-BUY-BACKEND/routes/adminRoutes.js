@@ -8,6 +8,7 @@ const {
   addStaff,
   getAllStaff,
   getStaffById,
+  getDriverAvailability,
   updateStaff,
   deleteStaff,
   updatedStatus,
@@ -31,6 +32,9 @@ router.post("/add", addStaff);
 
 //get all staff
 router.get("/", getAllStaff);
+
+// driver availability
+router.get("/:id/availability", getDriverAvailability);
 
 //get a staff
 router.get("/:id", getStaffById);

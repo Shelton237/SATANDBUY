@@ -6,13 +6,21 @@ import LanguageServices from "@/services/LanguageServices";
 import mockLanguages from "@/utils/mockup/languages";
 import { SidebarContext } from "@/context/SidebarContext";
 
+const SUPPORTED_LANGUAGES = ["en", "fr"];
+
 const SelectLanguageTwo = ({ handleSelectLanguage, register }) => {
   const { data, loading, error } = useAsync(
     LanguageServices.getShowingLanguage
   );
   const { lang } = useContext(SidebarContext);
 
-  const languageOptions = !error && !loading && data?.length > 0 ? data : mockLanguages;
+  const rawOptions =
+    !error && !loading && data?.length > 0 ? data : mockLanguages;
+  const filteredOptions = rawOptions.filter((option) =>
+    SUPPORTED_LANGUAGES.includes(option.iso_code)
+  );
+  const languageOptions =
+    filteredOptions.length > 0 ? filteredOptions : mockLanguages;
 
   return (
     <select
@@ -26,9 +34,9 @@ const SelectLanguageTwo = ({ handleSelectLanguage, register }) => {
       <option value={lang} defaultChecked hidden>
         {lang}
       </option>
-      {languageOptions.map((lang) => (
-        <option key={lang._id} value={lang.iso_code}>
-          {lang.iso_code}
+      {languageOptions.map((language) => (
+        <option key={language._id || language.iso_code} value={language.iso_code}>
+          {language.iso_code}
         </option>
       ))}
     </select>

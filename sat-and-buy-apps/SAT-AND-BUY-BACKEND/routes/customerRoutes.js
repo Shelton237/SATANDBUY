@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   loginCustomer,
   registerCustomer,
+  registerCustomerDirect,
   signUpWithProvider,
   signUpWithOauthProvider,
   verifyEmailAddress,
@@ -39,7 +40,10 @@ router.put("/shipping/address/:userId/:shippingId", updateShippingAddress);
 // shipping address delete
 router.delete("/shipping/address/:userId/:shippingId", deleteShippingAddress);
 
-//register a user
+// direct register without email verification
+router.post("/register", registerCustomerDirect);
+
+//register a user via verification token
 router.post("/register/:token", registerCustomer);
 
 //login a user

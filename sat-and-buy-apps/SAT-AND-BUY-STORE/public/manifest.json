@@ -6,9 +6,9 @@
   "scope": "/",
   "start_url": "/",
   "id": "/",
-  "short_name": "KachaBazar - Store",
-  "name": "KachaBazar - React Grocery & Organic Food Store e-commerce Template",
-  "description": "React Grocery & Organic Food Store e-commerce Template",
+  "short_name": "Sat & Buy",
+  "name": "Sat & Buy – Boutique & services énergétiques",
+  "description": "Marketplace Sat & Buy : équipements solaires, services et prestations énergie.",
   "icons": [
     {
       "src": "/icon-192x192.png",

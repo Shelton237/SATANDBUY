@@ -13,7 +13,16 @@ import isToday from "dayjs/plugin/isToday";
 import isYesterday from "dayjs/plugin/isYesterday";
 import { useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { FiCheck, FiRefreshCw, FiShoppingCart, FiTruck } from "react-icons/fi";
+import { Link } from "react-router-dom";
+import {
+  FiCheck,
+  FiRefreshCw,
+  FiShoppingCart,
+  FiTruck,
+  FiPackage,
+  FiLayers,
+  FiTag,
+} from "react-icons/fi";
 import { ImCreditCard, ImStack } from "react-icons/im";
 
 //internal import
@@ -31,16 +40,26 @@ import PageTitle from "@/components/Typography/PageTitle";
 import { SidebarContext } from "@/context/SidebarContext";
 import OrderServices from "@/services/OrderServices";
 import AnimatedContent from "@/components/common/AnimatedContent";
+import { AdminContext } from "@/context/AdminContext";
+
+const EMPTY_RESPONSE = {};
+const EMPTY_ORDER_RESPONSE = { orders: [], ordersData: [], totalOrder: 0 };
+
+const noopFetcher = async () => EMPTY_RESPONSE;
+const noopOrdersFetcher = async () => EMPTY_ORDER_RESPONSE;
 
 const Dashboard = () => {
   const { t } = useTranslation();
   const { mode } = useContext(WindmillContext);
+  const { authData } = useContext(AdminContext);
 
   dayjs.extend(isBetween);
   dayjs.extend(isToday);
   dayjs.extend(isYesterday);
 
   const { currentPage, handleChangePage } = useContext(SidebarContext);
+  const currentRole = authData?.user?.role || authData?.role || "Admin";
+  const isVendor = currentRole === "Vendeur";
 
   // react hook
   const [todayOrderAmount, setTodayOrderAmount] = useState(0);
@@ -57,25 +76,43 @@ const Dashboard = () => {
     data: bestSellerProductChart,
     loading: loadingBestSellerProduct,
     error,
-  } = useAsync(OrderServices.getBestSellerProductChart);
+  } = useAsync(
+    isVendor ? noopFetcher : OrderServices.getBestSellerProductChart
+  );
 
   const { data: dashboardRecentOrder, loading: loadingRecentOrder } = useAsync(
-    () => OrderServices.getDashboardRecentOrder({ page: currentPage, limit: 8 })
+    isVendor
+      ? noopOrdersFetcher
+      : () => OrderServices.getDashboardRecentOrder({ page: currentPage, limit: 8 })
   );
 
   const { data: dashboardOrderCount, loading: loadingOrderCount } = useAsync(
-    OrderServices.getDashboardCount
+    isVendor ? noopFetcher : OrderServices.getDashboardCount
   );
 
   const { data: dashboardOrderAmount, loading: loadingOrderAmount } = useAsync(
-    OrderServices.getDashboardAmount
+    isVendor ? noopFetcher : OrderServices.getDashboardAmount
   );
 
   // console.log("dashboardOrderCount", dashboardOrderCount);
 
-  const { dataTable, serviceData } = useFilter(dashboardRecentOrder?.orders);
+  const recentOrdersSource = isVendor ? [] : dashboardRecentOrder?.orders;
+  const { dataTable, serviceData } = useFilter(recentOrdersSource);
 
   useEffect(() => {
+    if (isVendor || !dashboardOrderAmount?.ordersData) {
+      setTodayOrderAmount(0);
+      setYesterdayOrderAmount(0);
+      setSalesReport([]);
+      setTodayCashPayment(0);
+      setTodayCardPayment(0);
+      setTodayCreditPayment(0);
+      setYesterdayCashPayment(0);
+      setYesterdayCardPayment(0);
+      setYesterdayCreditPayment(0);
+      return;
+    }
+
     // today orders show
     const todayOrder = dashboardOrderAmount?.ordersData?.filter((order) =>
       dayjs(order.updatedAt).isToday()
@@ -233,11 +270,70 @@ const Dashboard = () => {
     setYesterdayCreditPayment(yesterday_credit_payment?.total);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dashboardOrderAmount]);
+  }, [dashboardOrderAmount, isVendor]);
+
+  if (isVendor) {
+    const vendorShortcuts = [
+      {
+        href: "/products",
+        title: "Gérer vos produits",
+        description: "Ajoutez ou mettez à jour votre catalogue.",
+        Icon: FiPackage,
+      },
+      {
+        href: "/categories",
+        title: "Catégories",
+        description: "Organisez vos articles par catégorie.",
+        Icon: FiLayers,
+      },
+      {
+        href: "/attributes",
+        title: "Attributs",
+        description: "Définissez les variantes et caractéristiques produits.",
+        Icon: FiTag,
+      },
+    ];
+
+    return (
+      <>
+        <PageTitle title="Espace vendeur" />
+        <AnimatedContent>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100 mb-3">
+              Gestion du catalogue
+            </h2>
+            <p className="text-gray-600 dark:text-gray-300">
+              Votre accès est dédié à la mise à jour des contenus produits.
+              Utilisez les raccourcis ci-dessous pour tenir votre boutique à
+              jour. Les commandes et le suivi logistique restent gérés par
+              l&apos;équipe administrative.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mt-6">
+              {vendorShortcuts.map(({ href, title, description, Icon }) => (
+                <Link
+                  key={href}
+                  to={href}
+                  className="border border-emerald-100 dark:border-emerald-900 hover:border-emerald-500 rounded-lg p-4 transition-colors bg-emerald-50 dark:bg-emerald-900/30"
+                >
+                  <div className="flex items-center mb-3 text-emerald-600 dark:text-emerald-300">
+                    <Icon className="text-xl mr-2" />
+                    <span className="font-semibold">{title}</span>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    {description}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </AnimatedContent>
+      </>
+    );
+  }
 
   return (
     <>
-      <PageTitle>{t("DashboardOverview")}</PageTitle>
+      <PageTitle title="Sat & Buy Dashboard" />
 
       <AnimatedContent>
         <div className="grid gap-2 mb-8 xl:grid-cols-5 md:grid-cols-2">

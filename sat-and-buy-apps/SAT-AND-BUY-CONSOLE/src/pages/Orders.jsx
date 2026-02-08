@@ -25,11 +25,14 @@ import OrderServices from "@/services/OrderServices";
 import NotFound from "@/components/table/NotFound";
 import PageTitle from "@/components/Typography/PageTitle";
 import { SidebarContext } from "@/context/SidebarContext";
+import { AdminContext } from "@/context/AdminContext";
 import OrderTable from "@/components/order/OrderTable";
 import TableLoading from "@/components/preloader/TableLoading";
 import spinnerLoadingImage from "@/assets/img/spinner.gif";
 import useUtilsFunction from "@/hooks/useUtilsFunction";
 import AnimatedContent from "@/components/common/AnimatedContent";
+import MainDrawer from "@/components/drawer/MainDrawer";
+import OrderWorkflowDrawer from "@/components/drawer/OrderWorkflowDrawer";
 
 const Orders = () => {
   const {
@@ -55,6 +58,11 @@ const Orders = () => {
   const { t } = useTranslation();
 
   const [loadingExport, setLoadingExport] = useState(false);
+  const { authData } = useContext(AdminContext);
+  const currentUser = authData?.user || authData || {};
+  const isDriver = currentUser?.role === "Livreur";
+  const driverIdFilter =
+    isDriver ? currentUser?.id || currentUser?._id || "" : "";
 
   const { data, loading, error } = useAsync(() =>
     OrderServices.getAllOrders({
@@ -66,6 +74,7 @@ const Orders = () => {
       startDate: startDate,
       limit: resultsPerPage,
       customerName: searchText,
+      driverId: driverIdFilter,
     })
   );
 
@@ -133,7 +142,19 @@ const Orders = () => {
 
   return (
     <>
+      <MainDrawer>
+        <OrderWorkflowDrawer />
+      </MainDrawer>
+
       <PageTitle>{t("Orders")}</PageTitle>
+
+      {isDriver && (
+        <div className="mb-4 p-4 rounded border border-emerald-100 bg-emerald-50 text-sm text-emerald-800 dark:border-emerald-500/40 dark:bg-emerald-900/20 dark:text-emerald-100">
+          Mode livreur activÃ© : seules les commandes dont vous Ãªtes responsable
+          apparaissent ici. Utilisez votre planning dans le drawer pour confirmer
+          la livraison.
+        </div>
+      )}
 
       <AnimatedContent>
         <Card className="min-w-0 shadow-xs overflow-hidden bg-white dark:bg-gray-800 mb-5">
@@ -154,6 +175,8 @@ const Orders = () => {
                     <option value="Status" defaultValue hidden>
                       {t("Status")}
                     </option>
+                    <option value="Sorting">Sorting</option>
+                    <option value="ReadyForDelivery">Ready For Delivery</option>
                     <option value="Delivered">{t("PageOrderDelivered")}</option>
                     <option value="Pending">{t("PageOrderPending")}</option>
                     <option value="Processing">

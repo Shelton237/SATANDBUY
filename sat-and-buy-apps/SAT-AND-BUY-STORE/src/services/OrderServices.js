@@ -23,6 +23,12 @@ const OrderServices = {
   getOrderById: async (id, body) => {
     return requests.get(`/order/${id}`, body);
   },
+  getOrderBoard: async ({ limit = 12 } = {}) => {
+    return requests.get(`/order/board?limit=${limit}`);
+  },
+  confirmDelivery: async (id) => {
+    return requests.put(`/order/${id}/confirm-delivery`);
+  },
 };
 
 export default OrderServices;
