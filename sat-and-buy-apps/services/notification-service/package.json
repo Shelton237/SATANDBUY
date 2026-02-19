@@ -1,0 +1,23 @@
+{
+  "name": "@satandbuy/notification-service",
+  "version": "0.0.1",
+  "description": "Service Notification (scaffold) pour Sat & Buy",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "@satandbuy/notification-domain": "file:../../packages/notification-domain",
+    "@satandbuy/shared": "file:../../packages/shared",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.18.2",
+    "helmet": "^7.0.0",
+    "mongoose": "^5.13.8",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "@satandbuy/api-gateway",
+  "version": "0.1.0",
+  "description": "Gateway HTTP pour router les frontaux Sat & Buy vers les microservices",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "@satandbuy/shared": "file:../../packages/shared",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.18.2",
+    "http-proxy-middleware": "^3.0.0",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  },
+  "license": "ISC"
+}
