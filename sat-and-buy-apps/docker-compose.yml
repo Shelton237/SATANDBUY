@@ -2,6 +2,8 @@ services:
   mongo:
     image: mongo:6.0
     restart: unless-stopped
+    ports:
+      - "127.0.0.1:27017:27017"
     volumes:
       - mongo-data:/data/db
     environment:
@@ -9,20 +11,128 @@ services:
     networks:
       - satandbuy
 
-  backend:
+  catalog-mongo:
+    image: mongo:6.0
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:27018:27017"
+    volumes:
+      - mongo-catalog-data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: satandbuy_catalog
+    networks:
+      - satandbuy
+
+  nats:
+    image: nats:2.10
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:4222:4222"
+    networks:
+      - satandbuy
+
+  catalog-service:
     build:
-      context: ./SAT-AND-BUY-BACKEND
+      context: .
+      dockerfile: services/catalog-service/Dockerfile
     restart: unless-stopped
     env_file:
-      - env/backend.prod.env
+      - env/catalog-service.dev.env
+    depends_on:
+      - catalog-mongo
+      - nats
+    ports:
+      - "127.0.0.1:5100:5100"
+    networks:
+      - satandbuy
+
+  order-service:
+    build:
+      context: .
+      dockerfile: services/order-service/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - env/order-service.dev.env
+    depends_on:
+      - mongo
+      - nats
+    ports:
+      - "127.0.0.1:5200:5200"
+    networks:
+      - satandbuy
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: services/auth-service/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - env/auth-service.dev.env
+    depends_on:
+      - mongo
+      - nats
+    ports:
+      - "127.0.0.1:6001:6001"
+    networks:
+      - satandbuy
+
+  settings-service:
+    build:
+      context: .
+      dockerfile: services/settings-service/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - env/settings-service.dev.env
     depends_on:
       - mongo
     ports:
-      - "127.0.0.1:5000:5000"
-    extra_hosts:
-      - "console.dreamdigital.cm:38.242.216.23"
-      - "back-satbuy.dreamdigital.cm:38.242.216.23"
-      - "satandbuy.dreamdigital.cm:38.242.216.23"
+      - "127.0.0.1:5300:5300"
+    networks:
+      - satandbuy
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: services/notification-service/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - env/notification-service.dev.env
+    depends_on:
+      - mongo
+      - nats
+    ports:
+      - "127.0.0.1:5400:5400"
+    networks:
+      - satandbuy
+
+  delivery-service:
+    build:
+      context: .
+      dockerfile: services/delivery-service/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - env/delivery-service.dev.env
+    depends_on:
+      - mongo
+      - nats
+    ports:
+      - "127.0.0.1:5500:5500"
+    networks:
+      - satandbuy
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: services/api-gateway/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - env/api-gateway.dev.env
+    depends_on:
+      - auth-service
+      - catalog-service
+      - order-service
+    ports:
+      - "127.0.0.1:5055:5055"
     networks:
       - satandbuy
 
@@ -45,10 +155,10 @@ services:
     build:
       context: ./SAT-AND-BUY-STORE
       args:
-        NEXT_PUBLIC_API_BASE_URL: ${STORE_BUILD_API_BASE_URL:-https://back-satbuy.dreamdigital.cm/api}
-        NEXT_PUBLIC_API_SOCKET_URL: ${STORE_BUILD_API_SOCKET_URL:-https://back-satbuy.dreamdigital.cm}
-        NEXT_PUBLIC_STORE_DOMAIN: ${STORE_BUILD_STORE_DOMAIN:-https://satandbuy.dreamdigital.cm}
-        NEXTAUTH_URL: ${STORE_BUILD_NEXTAUTH_URL:-https://satandbuy.dreamdigital.cm}
+        NEXT_PUBLIC_API_BASE_URL: ${STORE_BUILD_API_BASE_URL:-http://api-gateway:5055/api}
+        NEXT_PUBLIC_API_SOCKET_URL: ${STORE_BUILD_API_SOCKET_URL:-http://api-gateway:5055}
+        NEXT_PUBLIC_STORE_DOMAIN: ${STORE_BUILD_STORE_DOMAIN:-http://store:3000}
+        NEXTAUTH_URL: ${STORE_BUILD_NEXTAUTH_URL:-http://store:3000}
     restart: unless-stopped
     env_file:
       - env/store.prod.env
@@ -67,3 +177,4 @@ networks:
 
 volumes:
   mongo-data:
+  mongo-catalog-data:
