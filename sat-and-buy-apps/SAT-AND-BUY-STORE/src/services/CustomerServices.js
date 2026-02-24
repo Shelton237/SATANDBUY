@@ -1,41 +1,32 @@
-import requests from "./httpServices.js";
+import requests, { authRequests } from "./httpServices.js";
 
 const CustomerServices = {
-  loginCustomer: async (body) => {
-    return requests.post("/customer/login", body);
-  },
+  loginCustomer: async (body) => authRequests.post("/customer/login", body),
 
-  verifyEmailAddress: async (body) => {
-    return requests.post("/customer/verify-email", body);
-  },
+  verifyEmailAddress: async (body) =>
+    authRequests.post("/customer/verify-email", body),
 
-  registerCustomer: async (token, body) => {
-    return requests.post(`/customer/register/${token}`, body);
-  },
+  registerCustomer: async (token, body) =>
+    authRequests.post(`/customer/register/${token}`, body),
 
-  registerCustomerDirect: async (body) => {
-    return requests.post("/customer/register", body);
-  },
+  registerCustomerDirect: async (body) =>
+    authRequests.post("/customer/register", body),
 
-  signUpWithOauthProvider: async (body) => {
-    return requests.post(`/customer/signup/oauth`, body);
-  },
+  signUpWithOauthProvider: async (body) =>
+    authRequests.post(`/customer/signup/oauth`, body),
 
   signUpWithProvider(token, body) {
-    return requests.post(`/customer/signup/${token}`, body);
+    return authRequests.post(`/customer/signup/${token}`, body);
   },
 
-  forgetPassword: async (body) => {
-    return requests.put("/customer/forget-password", body);
-  },
+  forgetPassword: async (body) =>
+    authRequests.put("/customer/forget-password", body),
 
-  resetPassword: async (body) => {
-    return requests.put("/customer/reset-password", body);
-  },
+  resetPassword: async (body) =>
+    authRequests.put("/customer/reset-password", body),
 
-  changePassword: async (body) => {
-    return requests.post("/customer/change-password", body);
-  },
+  changePassword: async (body) =>
+    authRequests.post("/customer/change-password", body),
 
   updateCustomer: async (id, body) => {
     return requests.put(`/customer/${id}`, body);

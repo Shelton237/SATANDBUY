@@ -37,7 +37,7 @@ services:
       dockerfile: services/catalog-service/Dockerfile
     restart: unless-stopped
     env_file:
-      - env/catalog-service.dev.env
+      - env/catalog-service.prod.env
     depends_on:
       - catalog-mongo
       - nats
@@ -52,7 +52,7 @@ services:
       dockerfile: services/order-service/Dockerfile
     restart: unless-stopped
     env_file:
-      - env/order-service.dev.env
+      - env/order-service.prod.env
     depends_on:
       - mongo
       - nats
@@ -67,7 +67,7 @@ services:
       dockerfile: services/auth-service/Dockerfile
     restart: unless-stopped
     env_file:
-      - env/auth-service.dev.env
+      - env/auth-service.prod.env
     depends_on:
       - mongo
       - nats
@@ -82,7 +82,7 @@ services:
       dockerfile: services/settings-service/Dockerfile
     restart: unless-stopped
     env_file:
-      - env/settings-service.dev.env
+      - env/settings-service.prod.env
     depends_on:
       - mongo
     ports:
@@ -96,7 +96,7 @@ services:
       dockerfile: services/notification-service/Dockerfile
     restart: unless-stopped
     env_file:
-      - env/notification-service.dev.env
+      - env/notification-service.prod.env
     depends_on:
       - mongo
       - nats
@@ -111,7 +111,7 @@ services:
       dockerfile: services/delivery-service/Dockerfile
     restart: unless-stopped
     env_file:
-      - env/delivery-service.dev.env
+      - env/delivery-service.prod.env
     depends_on:
       - mongo
       - nats
@@ -126,7 +126,7 @@ services:
       dockerfile: services/api-gateway/Dockerfile
     restart: unless-stopped
     env_file:
-      - env/api-gateway.dev.env
+      - env/api-gateway.prod.env
     depends_on:
       - auth-service
       - catalog-service

@@ -1,11 +1,5 @@
-import HttpService from "@/services/httpService";
+import { catalogHttp as http } from "@/services/httpClients";
 import { withToken } from "@/utils/tokenHelper";
-
-const API_BASE_URL = import.meta.env.VITE_APP_API_BASE_URL;
-
-const http = new HttpService(API_BASE_URL, {
-  "Content-Type": "application/json",
-});
 
 const STATUS = {
   SHOW: "show",

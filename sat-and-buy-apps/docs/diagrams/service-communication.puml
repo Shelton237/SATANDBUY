@@ -1,0 +1,51 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam ArrowColor #444
+skinparam backgroundColor #ffffff
+skinparam cloud {
+  BorderColor #555
+  FontColor #111
+}
+
+component "API Gateway\n(/api/*)" as GW
+component "auth-service" as AUTH
+component "catalog-service" as CATALOG
+component "order-service" as ORDER
+component "settings-service" as SETTINGS
+component "notification-service" as NOTIF
+component "delivery-service" as DELIVERY
+
+cloud "NATS Bus" as BUS
+
+GW --> AUTH : REST\n/api/auth/*
+GW --> CATALOG : REST\n/api/catalog/*
+GW --> ORDER : REST\n/api/orders,\n/api/order,\n/api/shipping-rate
+GW --> SETTINGS : REST\n/api/setting/*
+GW --> NOTIF : REST\n/api/notification/*
+GW --> DELIVERY : REST\n/api/delivery/*
+
+ORDER --> BUS : Pub events\n(ORDER_PLACED,\nORDER_DELIVERY_CONFIRMED)
+DELIVERY --> BUS : Pub events\n(slots libérés)
+BUS ..> NOTIF : Consume events\n(ORDER_PLACED…)
+BUS ..> DELIVERY : Consume events\n(ORDER_DELIVERY_CONFIRMED)
+AUTH --> BUS : (future events)
+CATALOG --> BUS : (future events)
+SETTINGS --> BUS : (future events)
+
+note right of ORDER
+  Commandes / paiements
+  -> publie les événements business
+  -> écoute commandes clients via HTTP
+end note
+
+note right of NOTIF
+  Consomme les événements
+  pour créer des notifications
+  (HTTP pour CRUD back-office)
+end note
+
+note right of DELIVERY
+  Réserve/libère les créneaux via HTTP
+  et réagit aux événements commandes
+end note
+@enduml

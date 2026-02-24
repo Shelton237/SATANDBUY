@@ -1,4 +1,4 @@
-import requests from "./httpServices";
+import { catalogRequests as requests } from "./httpServices";
 
 const CategoryServices = {
   getShowingCategory: async () => {

@@ -29,10 +29,10 @@ chmod 600 "${SCRIPT_DIR}/traefik/acme.json"
 
 echo "Reconstruction de la stack Docker Compose depuis ${SCRIPT_DIR}"
 cd "${SCRIPT_DIR}"
-STORE_BUILD_API_BASE_URL="${STORE_BUILD_API_BASE_URL:-http://backend:5000/api}"
-STORE_BUILD_API_SOCKET_URL="${STORE_BUILD_API_SOCKET_URL:-http://backend:5000}"
-STORE_BUILD_STORE_DOMAIN="${STORE_BUILD_STORE_DOMAIN:-https://satandbuy.dreamdigital.cm}"
-STORE_BUILD_NEXTAUTH_URL="${STORE_BUILD_NEXTAUTH_URL:-https://satandbuy.dreamdigital.cm}"
+STORE_BUILD_API_BASE_URL="${STORE_BUILD_API_BASE_URL:-http://api-gateway:5055/api}"
+STORE_BUILD_API_SOCKET_URL="${STORE_BUILD_API_SOCKET_URL:-http://api-gateway:5055}"
+STORE_BUILD_STORE_DOMAIN="${STORE_BUILD_STORE_DOMAIN:-http://store:3000}"
+STORE_BUILD_NEXTAUTH_URL="${STORE_BUILD_NEXTAUTH_URL:-http://store:3000}"
 export STORE_BUILD_API_BASE_URL STORE_BUILD_API_SOCKET_URL STORE_BUILD_STORE_DOMAIN STORE_BUILD_NEXTAUTH_URL
 docker compose down --remove-orphans
 docker compose up -d --build

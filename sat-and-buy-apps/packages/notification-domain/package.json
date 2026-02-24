@@ -1,0 +1,10 @@
+{
+  "name": "@satandbuy/notification-domain",
+  "version": "0.1.0",
+  "description": "Notifications domaine Sat & Buy",
+  "main": "src/index.js",
+  "license": "ISC",
+  "dependencies": {
+    "mongoose": "^5.13.8"
+  }
+}

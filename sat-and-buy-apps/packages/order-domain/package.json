@@ -1,0 +1,18 @@
+{
+  "name": "@satandbuy/order-domain",
+  "version": "0.1.0",
+  "description": "Modèles et contrôleurs du domaine order/checkout Sat & Buy",
+  "main": "src/index.js",
+  "license": "ISC",
+  "dependencies": {
+    "@satandbuy/catalog-domain": "file:../catalog-domain",
+    "@satandbuy/delivery-domain": "file:../delivery-domain",
+    "@satandbuy/shared": "file:../shared",
+    "dotenv": "^16.4.5",
+    "bcryptjs": "^2.4.3",
+    "mongoose": "^5.13.8",
+    "mongoose-sequence": "^5.3.1",
+    "razorpay": "^2.9.4",
+    "stripe": "^9.14.0"
+  }
+}

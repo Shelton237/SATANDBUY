@@ -68,6 +68,7 @@ const useAttributeSubmit = (id, attributeId) => {
     clearErrors("description");
     clearErrors("logoUrl");
     setPublished(true);
+    setVariants([]);
     setCurrentAttribute(null);
     setCurrentVariant(null);
   };
@@ -105,20 +106,30 @@ const useAttributeSubmit = (id, attributeId) => {
           notifySuccess("Valeur d'attribut créée");
         }
       } else {
-        const payload = {
-          title: mergeTranslationValue(
-            currentAttribute?.title,
-            language,
-            data.title
-          ),
+      const payload = {
+        title: mergeTranslationValue(
+          currentAttribute?.title,
+          language,
+          data.title
+        ),
           name: mergeTranslationValue(
             currentAttribute?.name,
             language,
             data.name
           ),
-          option: data.option,
-          status: published ? "ACTIVE" : "INACTIVE",
-        };
+        option: data.option,
+        status: published ? "ACTIVE" : "INACTIVE",
+      };
+
+      if (!variantId && variants.length > 0) {
+        payload.variants = variants.map((value) => ({
+          name:
+            typeof value === "object" && value !== null
+              ? value
+              : { [language]: value },
+          status: published ? "show" : "hide",
+        }));
+      }
 
         if (variantId) {
           await AttributeServices.update(variantId, payload);

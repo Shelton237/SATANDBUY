@@ -1,0 +1,23 @@
+{
+  "name": "@satandbuy/shared",
+  "version": "0.1.0",
+  "description": "Utilitaires partagés (constantes, auth, Mongo) pour les microservices Sat & Buy",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "license": "ISC",
+  "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.48.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.51.1",
+    "@opentelemetry/resources": "^1.26.0",
+    "@opentelemetry/sdk-node": "^0.51.1",
+    "@opentelemetry/sdk-trace-base": "^1.26.0",
+    "@opentelemetry/semantic-conventions": "^1.26.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^7.6.0",
+    "nats": "^2.19.0",
+    "pino": "^8.17.1",
+    "pino-pretty": "^11.2.1",
+    "prom-client": "^15.1.3"
+  }
+}

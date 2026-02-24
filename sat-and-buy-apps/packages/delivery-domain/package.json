@@ -1,0 +1,10 @@
+{
+  "name": "@satandbuy/delivery-domain",
+  "version": "0.1.0",
+  "description": "Gestion des créneaux/assignations livraison Sat & Buy",
+  "main": "src/index.js",
+  "license": "ISC",
+  "dependencies": {
+    "mongoose": "^5.13.8"
+  }
+}

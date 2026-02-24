@@ -1,4 +1,4 @@
-import requests from "./httpServices";
+import { catalogRequests as requests } from "./httpServices";
 
 const MarketListServices = {
   create: (body) => requests.post("/customer/market-lists", body),

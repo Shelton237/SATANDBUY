@@ -1,4 +1,4 @@
-import requests from "./httpServices";
+import { orderRequests as requests } from "./httpServices";
 
 const ShippingRateServices = {
   getRates: async ({ country = "", city = "" } = {}) => {

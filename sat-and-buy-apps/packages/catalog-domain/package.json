@@ -1,0 +1,11 @@
+{
+  "name": "@satandbuy/catalog-domain",
+  "version": "0.1.0",
+  "description": "Modèles et contrôleurs catalogue partagés pour Sat & Buy",
+  "main": "src/index.js",
+  "license": "ISC",
+  "dependencies": {
+    "dayjs": "^1.11.13",
+    "@satandbuy/shared": "file:../shared"
+  }
+}

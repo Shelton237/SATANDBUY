@@ -1,0 +1,61 @@
+@startuml
+skinparam backgroundColor #ffffff
+skinparam componentStyle rectangle
+skinparam ArrowColor #555555
+skinparam node {
+  BorderColor #333333
+  FontColor #111111
+}
+
+node "Frontaux" {
+  [Console (React)]
+  [Store (Next.js)]
+}
+
+node "API Gateway\n(services/api-gateway)" as GW {
+  [Proxy /api/*]
+}
+
+node "Services Node" {
+  [auth-service]
+  [catalog-service]
+  [order-service]
+  [settings-service]
+  [notification-service]
+  [delivery-service]
+}
+
+node "Données & Infra" {
+  database "MongoDB Catalog"
+  database "MongoDB Auth"
+  database "MongoDB Orders"
+  database "MongoDB Settings"
+  database "MongoDB Notifications"
+  database "MongoDB Delivery"
+  [NATS Bus]
+}
+
+[Console (React)] --> [Proxy /api/*]
+[Store (Next.js)] --> [Proxy /api/*]
+
+[Proxy /api/*] --> [auth-service]
+[Proxy /api/*] --> [catalog-service]
+[Proxy /api/*] --> [order-service]
+[Proxy /api/*] --> [settings-service]
+[Proxy /api/*] --> [notification-service]
+[Proxy /api/*] --> [delivery-service]
+
+[auth-service] --> "MongoDB Auth"
+[order-service] --> "MongoDB Orders"
+[settings-service] --> "MongoDB Settings"
+[notification-service] --> "MongoDB Notifications"
+[delivery-service] --> "MongoDB Delivery"
+[catalog-service] --> "MongoDB Catalog"
+
+[auth-service] ..> [NATS Bus]
+[order-service] ..> [NATS Bus]
+[settings-service] ..> [NATS Bus]
+[notification-service] ..> [NATS Bus]
+[delivery-service] ..> [NATS Bus]
+[catalog-service] ..> [NATS Bus]
+@enduml

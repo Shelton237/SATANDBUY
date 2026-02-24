@@ -1,13 +1,7 @@
-import HttpService from "@/services/httpService";
 import store from "@/reduxStore/store";
 import { STAFF_ROLE_VALUES } from "@/constants/roles";
-
-const API_BASE_URL = import.meta.env.VITE_APP_API_BASE_URL;
+import { authHttp } from "@/services/httpClients";
 const TOKEN_TTL_SECONDS = 24 * 60 * 60; // Backend JWT expires in 1 day
-
-const http = new HttpService(API_BASE_URL, {
-  "Content-Type": "application/json"
-});
 
 const isRoleAllowed = (role) => STAFF_ROLE_VALUES.includes(role);
 
@@ -29,7 +23,7 @@ const mapAdminPayload = (data = {}) => {
 
 class AuthService {
   static async login(email, password) {
-    const { data } = await http.post("/admin/login", { email, password });
+    const { data } = await authHttp.post("/admin/login", { email, password });
     const user = mapAdminPayload(data);
     if (!isRoleAllowed(user.role)) {
       throw new Error(

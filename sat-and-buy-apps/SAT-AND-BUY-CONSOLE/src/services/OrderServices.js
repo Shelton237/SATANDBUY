@@ -1,9 +1,5 @@
-import HttpService from "./httpService";
-
-const API_BASE_URL = import.meta.env.VITE_APP_API_BASE_URL;
-const requests = new HttpService(API_BASE_URL, {
-  "Content-Type": "application/json",
-});
+import { orderHttp as requests } from "./httpClients";
+import { withToken } from "@/utils/tokenHelper";
 
 const OrderServices = {
   getAllOrders: async ({
@@ -32,16 +28,20 @@ const OrderServices = {
     if (driverId) params.append("driverId", driverId);
 
     const query = params.toString();
-    return requests
-      .get(`/orders?${query}`, body, headers)
-      .then((res) => res?.data || res);
+    return withToken((token) =>
+      requests
+        .get(`/orders?${query}`, token, headers)
+        .then((res) => res?.data || res)
+    );
   },
 
   getAllOrdersTwo: async ({ invoice, body, headers }) => {
     const searchInvoice = invoice !== null ? invoice : "";
-    return requests
-      .get(`/orders/all?invoice=${searchInvoice}`, body, headers)
-      .then((res) => res?.data || res);
+    return withToken((token) =>
+      requests
+        .get(`/orders/all?invoice=${searchInvoice}`, token, headers)
+        .then((res) => res?.data || res)
+    );
   },
 
   getRecentOrders: async ({
@@ -50,39 +50,54 @@ const OrderServices = {
     startDate = "1:00",
     endDate = "23:59",
   }) => {
-    return requests
-      .get(
-        `/orders/recent?page=${page}&limit=${limit}&startDate=${startDate}&endDate=${endDate}`
-      )
-      .then((res) => res?.data || res);
+    return withToken((token) =>
+      requests
+        .get(
+          `/orders/recent?page=${page}&limit=${limit}&startDate=${startDate}&endDate=${endDate}`,
+          token
+        )
+        .then((res) => res?.data || res)
+    );
   },
 
   getOrderCustomer: async (id, body) => {
-    return requests.get(`/orders/customer/${id}`, body).then((res) => res?.data || res);
+    return withToken((token) =>
+      requests.get(`/orders/customer/${id}`, token).then((res) => res?.data || res)
+    );
   },
 
   getOrderById: async (id, body) => {
-    return requests.get(`/orders/${id}`, body).then((res) => res?.data || res);
+    return withToken((token) =>
+      requests.get(`/orders/${id}`, token).then((res) => res?.data || res)
+    );
   },
 
   updateOrder: async (id, body, headers) => {
-    return requests.put(`/orders/${id}`, body, headers).then((res) => res?.data || res);
+    return withToken((token) =>
+      requests.put(`/orders/${id}`, body, token, headers).then((res) => res?.data || res)
+    );
   },
 
   startSorting: async (id, body) => {
-    return requests.put(`/orders/${id}/sorting/start`, body);
+    return withToken((token) => requests.put(`/orders/${id}/sorting/start`, body, token));
   },
 
   completeSorting: async (id, body) => {
-    return requests.put(`/orders/${id}/sorting/complete`, body);
+    return withToken((token) =>
+      requests.put(`/orders/${id}/sorting/complete`, body, token)
+    );
   },
 
   updateSortingItem: async (orderId, itemId, body) => {
-    return requests.put(`/orders/${orderId}/sorting/items/${itemId}`, body);
+    return withToken((token) =>
+      requests.put(`/orders/${orderId}/sorting/items/${itemId}`, body, token)
+    );
   },
 
   updateDeliveryPlan: async (id, body) => {
-    return requests.put(`/orders/${id}/delivery-plan`, body);
+    return withToken((token) =>
+      requests.put(`/orders/${id}/delivery-plan`, body, token)
+    );
   },
 
   getOrdersBoard: async ({ limit = 20, statuses = [] } = {}) => {
@@ -95,11 +110,15 @@ const OrderServices = {
     }
     const search = params.toString();
     const url = search ? `/orders/board?${search}` : "/orders/board";
-    return requests.get(url).then((res) => res?.data || res);
+    return withToken((token) =>
+      requests.get(url, token).then((res) => res?.data || res)
+    );
   },
 
   deleteOrder: async (id) => {
-    return requests.delete(`/orders/${id}`).then((res) => res?.data || res);
+    return withToken((token) =>
+      requests.delete(`/orders/${id}`, token).then((res) => res?.data || res)
+    );
   },
 
   getDashboardOrdersData: async ({
@@ -107,27 +126,37 @@ const OrderServices = {
     limit = 8,
     endDate = "23:59",
   }) => {
-    return requests
-      .get(`/orders/dashboard?page=${page}&limit=${limit}&endDate=${endDate}`)
-      .then((res) => res?.data || res);
+    return withToken((token) =>
+      requests
+        .get(`/orders/dashboard?page=${page}&limit=${limit}&endDate=${endDate}`, token)
+        .then((res) => res?.data || res)
+    );
   },
 
   getDashboardAmount: async () => {
-    return requests.get("/orders/dashboard-amount").then((res) => res?.data || res);
+    return withToken((token) =>
+      requests.get("/orders/dashboard-amount", token).then((res) => res?.data || res)
+    );
   },
 
   getDashboardCount: async () => {
-    return requests.get("/orders/dashboard-count").then((res) => res?.data || res);
+    return withToken((token) =>
+      requests.get("/orders/dashboard-count", token).then((res) => res?.data || res)
+    );
   },
 
   getDashboardRecentOrder: async ({ page = 1, limit = 8 }) => {
-    return requests
-      .get(`/orders/dashboard-recent-order?page=${page}&limit=${limit}`)
-      .then((res) => res?.data || res);
+    return withToken((token) =>
+      requests
+        .get(`/orders/dashboard-recent-order?page=${page}&limit=${limit}`, token)
+        .then((res) => res?.data || res)
+    );
   },
 
   getBestSellerProductChart: async () => {
-    return requests.get("/orders/best-seller/chart").then((res) => res?.data || res);
+    return withToken((token) =>
+      requests.get("/orders/best-seller/chart", token).then((res) => res?.data || res)
+    );
   },
 };
 

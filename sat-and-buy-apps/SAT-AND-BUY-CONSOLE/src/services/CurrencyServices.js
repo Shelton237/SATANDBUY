@@ -1,10 +1,5 @@
-import HttpService from "./httpService";
+import { catalogHttp as requests } from "./httpClients";
 import { withToken } from "@/utils/tokenHelper";
-
-const API_BASE_URL = import.meta.env.VITE_APP_API_BASE_URL;
-const requests = new HttpService(API_BASE_URL, {
-  "Content-Type": "application/json",
-});
 
 const CurrencyServices = {
   getAllCurrency: () =>

@@ -6,6 +6,11 @@ const cors = require("cors");
 const { createProxyMiddleware } = require("http-proxy-middleware");
 const shared = require("@satandbuy/shared");
 
+const rewriteOriginalPath = (_path, req) => req.originalUrl || _path;
+
+const rewritePrefix = (pattern, replacement) => (path, req) =>
+  (req.originalUrl || path).replace(pattern, replacement);
+
 const buildProxy = (target, options = {}) =>
   createProxyMiddleware({
     target,
@@ -34,7 +39,14 @@ const createGatewayApp = (config) => {
       "/api/auth",
       buildProxy(config.authUrl, {
         logLevel: config.logLevel,
-        pathRewrite: { "^/api/auth": "/auth" },
+        pathRewrite: rewritePrefix(/^\/api\/auth/, "/auth"),
+      })
+    );
+    app.use(
+      "/api/admin",
+      buildProxy(config.authUrl, {
+        logLevel: config.logLevel,
+        pathRewrite: rewritePrefix(/^\/api\/admin/, "/auth/admin"),
       })
     );
   }
@@ -44,7 +56,7 @@ const createGatewayApp = (config) => {
       "/api/catalog",
       buildProxy(config.catalogUrl, {
         logLevel: config.logLevel,
-        pathRewrite: { "^/api/catalog": "/api" },
+        pathRewrite: rewritePrefix(/^\/api\/catalog/, "/api"),
       })
     );
   }
@@ -52,36 +64,54 @@ const createGatewayApp = (config) => {
   if (config.orderUrl) {
     app.use(
       "/api/orders",
-      buildProxy(config.orderUrl, { logLevel: config.logLevel })
+      buildProxy(config.orderUrl, {
+        logLevel: config.logLevel,
+        pathRewrite: rewriteOriginalPath,
+      })
     );
     app.use(
       "/api/order",
-      buildProxy(config.orderUrl, { logLevel: config.logLevel })
+      buildProxy(config.orderUrl, {
+        logLevel: config.logLevel,
+        pathRewrite: rewriteOriginalPath,
+      })
     );
     app.use(
       "/api/shipping-rate",
-      buildProxy(config.orderUrl, { logLevel: config.logLevel })
+      buildProxy(config.orderUrl, {
+        logLevel: config.logLevel,
+        pathRewrite: rewriteOriginalPath,
+      })
     );
   }
 
   if (config.settingsUrl) {
     app.use(
       "/api/setting",
-      buildProxy(config.settingsUrl, { logLevel: config.logLevel })
+      buildProxy(config.settingsUrl, {
+        logLevel: config.logLevel,
+        pathRewrite: rewriteOriginalPath,
+      })
     );
   }
 
   if (config.notificationUrl) {
     app.use(
       "/api/notification",
-      buildProxy(config.notificationUrl, { logLevel: config.logLevel })
+      buildProxy(config.notificationUrl, {
+        logLevel: config.logLevel,
+        pathRewrite: rewriteOriginalPath,
+      })
     );
   }
 
   if (config.deliveryUrl) {
     app.use(
       "/api/delivery",
-      buildProxy(config.deliveryUrl, { logLevel: config.logLevel })
+      buildProxy(config.deliveryUrl, {
+        logLevel: config.logLevel,
+        pathRewrite: rewriteOriginalPath,
+      })
     );
   }
 

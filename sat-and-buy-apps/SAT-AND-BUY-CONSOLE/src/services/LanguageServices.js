@@ -1,9 +1,4 @@
-import HttpService from "./httpService";
-
-const API_BASE_URL = import.meta.env.VITE_APP_API_BASE_URL;
-const requests = new HttpService(API_BASE_URL, {
-  "Content-Type": "application/json",
-});
+import { catalogHttp as requests } from "./httpClients";
 
 const LanguageServices = {
   getAllLanguages: async () => {

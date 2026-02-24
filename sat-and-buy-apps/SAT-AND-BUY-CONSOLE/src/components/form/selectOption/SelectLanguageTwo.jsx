@@ -14,11 +14,22 @@ const SelectLanguageTwo = ({ handleSelectLanguage, register }) => {
   );
   const { lang } = useContext(SidebarContext);
 
+  const resolvedData = Array.isArray(data)
+    ? data
+    : Array.isArray(data?.data)
+    ? data.data
+    : [];
+
   const rawOptions =
-    !error && !loading && data?.length > 0 ? data : mockLanguages;
-  const filteredOptions = rawOptions.filter((option) =>
-    SUPPORTED_LANGUAGES.includes(option.iso_code)
-  );
+    !error && !loading && resolvedData.length > 0
+      ? resolvedData
+      : mockLanguages;
+
+  const filteredOptions = Array.isArray(rawOptions)
+    ? rawOptions.filter((option) =>
+        SUPPORTED_LANGUAGES.includes(option.iso_code)
+      )
+    : [];
   const languageOptions =
     filteredOptions.length > 0 ? filteredOptions : mockLanguages;
 

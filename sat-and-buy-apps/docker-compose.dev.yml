@@ -1,0 +1,8 @@
+services:
+  console:
+    env_file:
+      - env/console.dev.env
+
+  store:
+    env_file:
+      - env/store.dev.env
