@@ -11,12 +11,11 @@ import {
   TableFooter,
   TableHeader,
 } from "@windmill/react-ui";
-import { useCallback, useContext, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FiPlus } from "react-icons/fi";
 
 import useAsync from "@/hooks/useAsync";
-import useFilter from "@/hooks/useFilter";
 import useStaffRoles from "@/hooks/useStaffRoles";
 import MainDrawer from "@/components/drawer/MainDrawer";
 import StaffDrawer from "@/components/drawer/StaffDrawer";
@@ -34,6 +33,8 @@ const Staff = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const resultsPerPage = 20;
 
   const { roles, loading: rolesLoading, error: rolesError } = useStaffRoles();
 
@@ -66,26 +67,33 @@ const Staff = () => {
     });
   }, [data, searchQuery, selectedRole]);
 
-  const {
-    userRef,
-    setRole,
-    totalResults,
-    resultsPerPage,
-    dataTable,
-    serviceData,
-    handleChangePage,
-    handleSubmitUser,
-  } = useFilter(filteredUsers);
+  const totalResults = filteredUsers.length;
+  const paginatedUsers = useMemo(() => {
+    const start = (currentPage - 1) * resultsPerPage;
+    return filteredUsers.slice(start, start + resultsPerPage);
+  }, [filteredUsers, currentPage, resultsPerPage]);
+
+  const handleChangePage = useCallback((page) => {
+    setCurrentPage(page);
+  }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedRole, data]);
 
   const handleResetField = useCallback(() => {
     setSelectedRole("");
     setSearchQuery("");
   }, []);
 
+  const handleSearchSubmit = useCallback((e) => {
+    e.preventDefault();
+  }, []);
+
   const renderTable = useMemo(() => {
     if (loading) return <TableLoading row={12} col={7} width={163} height={20} />;
     if (error) return <span className="text-center mx-auto text-red-500">{error}</span>;
-    if (serviceData?.length === 0) return <NotFound title="Sorry, There are no staff right now." />;
+    if (filteredUsers.length === 0) return <NotFound title="Sorry, There are no staff right now." />;
     return (
       <TableContainer className="mb-8 rounded-b-lg">
         <Table>
@@ -101,7 +109,7 @@ const Staff = () => {
               <TableCell className="text-right">{t("StaffActionsTbl")}</TableCell>
             </tr>
           </TableHeader>
-          <StaffTable staffs={dataTable} lang={lang} />
+          <StaffTable staffs={paginatedUsers} lang={lang} />
         </Table>
         <TableFooter>
           <Pagination
@@ -113,7 +121,7 @@ const Staff = () => {
         </TableFooter>
       </TableContainer>
     );
-  }, [loading, error, serviceData, t, dataTable, lang, totalResults, resultsPerPage, handleChangePage]);
+  }, [loading, error, filteredUsers.length, t, paginatedUsers, lang, totalResults, resultsPerPage, handleChangePage]);
 
   return (
     <>
@@ -142,7 +150,7 @@ const Staff = () => {
       <AnimatedContent>
         <Card className="min-w-0 shadow-xs overflow-hidden bg-white dark:bg-gray-800 mb-5">
           <CardBody>
-            <form onSubmit={handleSubmitUser} className="py-3 grid gap-4 lg:gap-6 xl:gap-6 md:flex xl:flex">
+            <form onSubmit={handleSearchSubmit} className="py-3 grid gap-4 lg:gap-6 xl:gap-6 md:flex xl:flex">
               <div className="flex-grow-0 md:flex-grow lg:flex-grow xl:flex-grow">
                 <Input
                   type="search"

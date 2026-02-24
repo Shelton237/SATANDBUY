@@ -1,12 +1,7 @@
 // services/UserService.js
-import HttpService from "@/services/httpService";
+import { apiHttp as http } from "@/services/httpClients";
 import { DEFAULT_DRIVER_SLOTS } from "@/constants/delivery";
-
-const API_BASE_URL = import.meta.env.VITE_APP_API_BASE_URL;
-
-const http = new HttpService(API_BASE_URL, {
-  "Content-Type": "application/json"
-});
+import { withToken } from "@/utils/tokenHelper";
 
 const mapAdminToUser = (admin = {}) => {
   const rawName =
@@ -40,36 +35,52 @@ const UserService = {
   mapAdminToUser,
 
   async getAllUsers() {
-    const res = await http.get("/admin");
-    return (res.data || []).map(mapAdminToUser);
+    return withToken(async (token) => {
+      const res = await http.get("/admin", token);
+      const payload = res?.data;
+      const admins = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.admins)
+        ? payload.admins
+        : [];
+      return admins.map(mapAdminToUser);
+    });
   },
 
   async getUserById(id) {
-    const res = await http.get(`/admin/${id}`);
-    return { data: mapAdminToUser(res.data) };
+    return withToken(async (token) => {
+      const res = await http.get(`/admin/${id}`, token);
+      return { data: mapAdminToUser(res.data) };
+    });
   },
 
   async createUser(body) {
-    const res = await http.post("/admin/add", body);
-    const staff = res.data?.staff || res.data;
-    return { data: mapAdminToUser(staff) };
+    return withToken(async (token) => {
+      const res = await http.post("/admin/add", body, token);
+      const staff = res.data?.staff || res.data;
+      return { data: mapAdminToUser(staff) };
+    });
   },
 
   async updateUser(id, body) {
-    const res = await http.put(`/admin/${id}`, body);
-    const staff = res.data?.staff || res.data;
-    return { data: mapAdminToUser(staff) };
+    return withToken(async (token) => {
+      const res = await http.put(`/admin/${id}`, body, token);
+      const staff = res.data?.staff || res.data;
+      return { data: mapAdminToUser(staff) };
+    });
   },
 
   async deleteUser(id) {
-    return http.delete(`/admin/${id}`);
+    return withToken((token) => http.delete(`/admin/${id}`, token));
   },
 
   async updateStatus(id, enabled) {
     const status = enabled ? "Active" : "Inactive";
-    const res = await http.put(`/admin/update-status/${id}`, { status });
-    const staff = res.data?.staff || res.data;
-    return { data: mapAdminToUser(staff) };
+    return withToken(async (token) => {
+      const res = await http.put(`/admin/update-status/${id}`, { status }, token);
+      const staff = res.data?.staff || res.data;
+      return { data: mapAdminToUser(staff) };
+    });
   }
 };
 
