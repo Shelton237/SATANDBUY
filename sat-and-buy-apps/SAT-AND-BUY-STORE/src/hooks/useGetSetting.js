@@ -41,31 +41,38 @@ const useGetSetting = () => {
     const fetchAndAddSetting = async () => {
       try {
         setLoading(true);
-        // console.log("storeCustomizationSetting setting not available");
         const res = await SettingServices.getStoreCustomizationSetting();
-        // console.log("res", res);
-        const storeCustomizationSettingData = {
-          ...res,
-          name: "storeCustomizationSetting",
-        };
+        const hasRemoteData =
+          res &&
+          Object.values(res).some((value) => {
+            if (value === null || value === undefined) return false;
+            if (Array.isArray(value)) return value.length > 0;
+            if (typeof value === "object") return Object.keys(value).length > 0;
+            return String(value).trim().length > 0;
+          });
 
-        if (Object.keys(res).length > 0) {
-          dispatch(addSetting(storeCustomizationSettingData));
-        } else {
-          // console.log(
-          //   "store customization setting not available in db! use local one"
-          // );
-          const storeCustomizationData = {
-            ...storeCustomization?.setting,
-            name: "storeCustomizationSetting",
-          };
-          dispatch(addSetting(storeCustomizationData));
-        }
+        const storeCustomizationSettingData = hasRemoteData
+          ? {
+              ...res,
+              name: "storeCustomizationSetting",
+            }
+          : {
+              ...storeCustomization?.setting,
+              name: "storeCustomizationSetting",
+            };
+
+        dispatch(addSetting(storeCustomizationSettingData));
 
         setLoading(false);
       } catch (err) {
         setError(err.message);
         console.log("Error on getting storeCustomizationSetting setting", err);
+        setLoading(false);
+        const storeCustomizationData = {
+          ...storeCustomization?.setting,
+          name: "storeCustomizationSetting",
+        };
+        dispatch(addSetting(storeCustomizationData));
       }
     };
 
