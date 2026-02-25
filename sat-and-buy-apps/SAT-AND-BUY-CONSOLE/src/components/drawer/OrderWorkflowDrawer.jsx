@@ -16,6 +16,7 @@ import UserService from "@/services/UserService";
 import useUtilsFunction from "@/hooks/useUtilsFunction";
 import { notifyError, notifySuccess } from "@/utils/toast";
 import { DEFAULT_DRIVER_SLOTS } from "@/constants/delivery";
+import { stringifyAddress } from "@/utils/address";
 
 const DEFAULT_PLAN = {
   assignedDriver: "",
@@ -62,6 +63,11 @@ const OrderWorkflowDrawer = () => {
     selectedDriver?.availabilitySlots && selectedDriver.availabilitySlots.length
       ? selectedDriver.availabilitySlots
       : DEFAULT_DRIVER_SLOTS;
+
+  const customerAddress = useMemo(
+    () => stringifyAddress(order?.user_info?.address),
+    [order?.user_info?.address]
+  );
 
   const parseWindowValue = useCallback((windowValue = "") => {
     if (!windowValue) {
@@ -605,13 +611,12 @@ const handleDeliveryPlanSubmit = (e) => {
                     .filter(Boolean)
                     .join(", ") || "â€”"
                 )}
-                {order?.user_info?.address && (
+                {customerAddress && (
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Adresse : {order.user_info.address}
+                    Adresse : {customerAddress}
                     {order?.user_info?.zipCode
                       ? ` (${order.user_info.zipCode})`
-                      : ""
-                    }
+                      : ""}
                   </p>
                 )}
               </div>

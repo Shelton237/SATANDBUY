@@ -10,6 +10,7 @@ import {
 } from "@react-pdf/renderer";
 import { useTranslation } from "react-i18next";
 import satBuyLogo from "@/assets/img/logo/logo-text.png";
+import { formatAddressSnippet } from "@/utils/address";
 
 Font.register({
   family: "Open Sans",
@@ -451,7 +452,7 @@ const InvoiceForDownload = ({
                     {"\n"}
                     {data?.user_info?.email}
                     {"\n"}
-                    {data?.user_info?.address?.substring(0, 30)}
+                    {formatAddressSnippet(data?.user_info?.address, 30)}
                     {"\n"}
                     {data?.user_info?.city}, {data?.user_info?.country},{" "}
                     {data?.user_info?.zipCode}

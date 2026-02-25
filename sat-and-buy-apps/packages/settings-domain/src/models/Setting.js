@@ -1,4 +1,5 @@
-const mongoose = require("mongoose");
+const { mongo } = require("@satandbuy/shared");
+const mongoose = mongo.mongoose;
 
 const settingSchema = new mongoose.Schema(
   {
@@ -15,6 +16,4 @@ const settingSchema = new mongoose.Schema(
 
 // module.exports = settingSchema;
 
-const Setting = mongoose.model("Setting", settingSchema);
-
-module.exports = Setting;
+module.exports = mongoose.models.Setting || mongoose.model("Setting", settingSchema);

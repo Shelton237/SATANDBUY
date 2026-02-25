@@ -18,6 +18,7 @@ import satBuyLogo from "@/assets/img/logo/logo-text.png";
 import PageTitle from "@/components/Typography/PageTitle";
 import useUtilsFunction from "@/hooks/useUtilsFunction";
 import InvoiceForDownload from "@/components/invoice/InvoiceForDownload";
+import { formatAddressSnippet } from "@/utils/address";
 
 const OrderInvoice = () => {
   const { t } = useTranslation();
@@ -95,7 +96,7 @@ const OrderInvoice = () => {
                   {data?.user_info?.email}{" "}
                   <span className="ml-2">{data?.user_info?.contact}</span>
                   <br />
-                  {data?.user_info?.address?.substring(0, 30)}
+                  {formatAddressSnippet(data?.user_info?.address, 30)}
                   <br />
                   {data?.user_info?.city}, {data?.user_info?.country},{" "}
                   {data?.user_info?.zipCode}

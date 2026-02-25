@@ -5,6 +5,7 @@ import { TableCell, TableBody, TableRow } from "@windmill/react-ui";
 import Status from "@/components/table/Status";
 import useUtilsFunction from "@/hooks/useUtilsFunction";
 import SelectStatus from "@/components/form/selectOption/SelectStatus";
+import { formatAddressSnippet } from "@/utils/address";
 
 // import Status from '../table/Status';
 // import SelectStatus from '../form/SelectStatus';
@@ -29,7 +30,9 @@ const CustomerOrderTable = ({ orders }) => {
             </TableCell>
 
             <TableCell>
-              <span className="text-sm">{order?.user_info?.address}</span>
+              <span className="text-sm">
+                {formatAddressSnippet(order?.user_info?.address, 28)}
+              </span>
             </TableCell>
             <TableCell>
               {" "}
