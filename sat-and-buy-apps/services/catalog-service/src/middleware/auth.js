@@ -25,12 +25,16 @@ const isAuth = (req, res, next) => {
   }
 };
 
+const ADMIN_ROLES = ["admin", "trieur", "operations"];
+
 const isAdmin = (req, res, next) => {
-  if (!req.user || typeof req.user.role !== "string") {
+  const role = typeof req.user?.role === "string" ? req.user.role : "";
+  if (!role) {
     return res.status(403).send({ message: "Admin privileges required." });
   }
 
-  if (req.user.role.toLowerCase() !== "admin") {
+  const normalized = role.trim().toLowerCase();
+  if (!ADMIN_ROLES.includes(normalized)) {
     return res.status(403).send({ message: "Admin privileges required." });
   }
 
