@@ -2,12 +2,16 @@ const ShippingRate = require("../models/ShippingRate");
 
 const APPROVAL_STATUSES = ["pending", "approved", "rejected"];
 
+const LOGISTIC_ROLES = ["livreur", "admin", "trieur", "operations"];
+
 const isLogisticUser = (user = {}) => {
-  const role = user?.role;
-  return role === "Livreur" || role === "Admin";
+  const role = typeof user?.role === "string" ? user.role : "";
+  return LOGISTIC_ROLES.includes(role.trim().toLowerCase());
 };
 
-const isAdminUser = (user = {}) => user?.role === "Admin";
+const isAdminUser = (user = {}) =>
+  typeof user?.role === "string" &&
+  user.role.trim().toLowerCase() === "admin";
 
 const normalizeText = (value = "") =>
   typeof value === "string" ? value.trim() : "";
