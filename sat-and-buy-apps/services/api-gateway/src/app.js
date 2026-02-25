@@ -49,6 +49,13 @@ const createGatewayApp = (config) => {
         pathRewrite: rewritePrefix(/^\/api\/admin/, "/auth/admin"),
       })
     );
+    app.use(
+      "/api/customer",
+      buildProxy(config.authUrl, {
+        logLevel: config.logLevel,
+        pathRewrite: rewritePrefix(/^\/api\/customer/, "/auth/customer"),
+      })
+    );
   }
 
   if (config.catalogUrl) {

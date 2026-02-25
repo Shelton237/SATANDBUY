@@ -10,6 +10,9 @@ const mailer = require("../lib/mailer");
 const { CLIENT } = require("../constants/userTypes");
 const { buildAuthResponse } = require("../utils/response");
 
+const normalizeSearchText = (value = "") =>
+  typeof value === "string" ? value.trim() : "";
+
 const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -235,6 +238,102 @@ const resetPassword = async (req, res, next) => {
   }
 };
 
+const addAllCustomers = async (req, res, next) => {
+  try {
+    if (!Array.isArray(req.body) || !req.body.length) {
+      throw createError(400, "Une liste de clients est requise.");
+    }
+    await Customer.deleteMany({});
+    await Customer.insertMany(req.body);
+    res.send({ message: "Clients importÃ©s avec succÃ¨s." });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const listCustomers = async (req, res, next) => {
+  try {
+    const searchText = normalizeSearchText(req.query.searchText);
+    const filter = {};
+    if (searchText) {
+      const regex = new RegExp(searchText, "i");
+      filter.$or = [{ name: regex }, { email: regex }, { phone: regex }];
+    }
+    const customers = await Customer.find(filter).sort({ createdAt: -1 }).lean();
+    res.send(customers);
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getCustomerById = async (req, res, next) => {
+  try {
+    const customer = await Customer.findById(req.params.id).lean();
+    if (!customer) {
+      throw createError(404, "Client introuvable.");
+    }
+    res.send(customer);
+  } catch (err) {
+    next(err);
+  }
+};
+
+const updateCustomer = async (req, res, next) => {
+  try {
+    const { name, email, address, phone, image } = req.body;
+    const customer = await Customer.findById(req.params.id);
+    if (!customer) {
+      throw createError(404, "Client introuvable.");
+    }
+
+    if (email && email !== customer.email) {
+      const existing = await Customer.findOne({ email });
+      if (existing && existing.id !== customer.id) {
+        throw createError(400, "Cet email est dÃ©jÃ  utilisÃ©.");
+      }
+    }
+
+    customer.name = name ?? customer.name;
+    customer.email = email ?? customer.email;
+    customer.address = address ?? customer.address;
+    customer.phone = phone ?? customer.phone;
+    customer.image = image ?? customer.image;
+    customer.role = customer.role || CLIENT;
+
+    const updated = await customer.save();
+    const token = jwt.sign(
+      { _id: updated._id, email: updated.email, role: updated.role || CLIENT },
+      process.env.JWT_SECRET
+    );
+
+    res.send({
+      token,
+      _id: updated._id,
+      name: updated.name,
+      email: updated.email,
+      address: updated.address,
+      phone: updated.phone,
+      image: updated.image,
+      role: updated.role || CLIENT,
+      message: "Client mis Ã  jour avec succÃ¨s.",
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const deleteCustomer = async (req, res, next) => {
+  try {
+    const result = await Customer.deleteOne({ _id: req.params.id });
+    if (result.deletedCount === 0) {
+      throw createError(404, "Client introuvable.");
+    }
+    res.send({ message: "Client supprimÃ©." });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   login,
   requestEmailVerification,
@@ -245,4 +344,9 @@ module.exports = {
   changePassword,
   forgetPassword,
   resetPassword,
+  addAllCustomers,
+  listCustomers,
+  getCustomerById,
+  updateCustomer,
+  deleteCustomer,
 };
