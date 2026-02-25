@@ -1,5 +1,5 @@
 import Cookies from "js-cookie";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 //internal import
@@ -7,6 +7,18 @@ import { useDispatch, useSelector } from "react-redux";
 import SettingServices from "@services/SettingServices";
 import { addSetting } from "@redux/slice/settingSlice";
 import { storeCustomization } from "@utils/storeCustomizationSetting";
+
+const hasContent = (value = {}) => {
+  if (!value || typeof value !== "object") return false;
+  const clone = { ...value };
+  delete clone.name;
+  return Object.values(clone).some((item) => {
+    if (item === null || item === undefined) return false;
+    if (Array.isArray(item)) return item.length > 0;
+    if (typeof item === "object") return Object.keys(item).length > 0;
+    return String(item).trim().length > 0;
+  });
+};
 
 const useGetSetting = () => {
   const lang = Cookies.get("_lang");
@@ -31,10 +43,15 @@ const useGetSetting = () => {
     (value) => value.name === "storeCustomizationSetting"
   );
 
-  // useEffect(() => {
-  //   setSocket(io(process.env.NEXT_PUBLIC_API_BASE_URL));
-  //   // setSocket(io("http://localhost:5065"));
-  // }, []);
+  const shouldFetchStoreCustomization = useMemo(
+    () => !hasContent(storeCustomizationSetting),
+    [storeCustomizationSetting]
+  );
+
+  const shouldFetchGlobalSetting = useMemo(
+    () => !hasContent(globalSetting),
+    [globalSetting]
+  );
 
   useEffect(() => {
     // Function to fetch and add the setting
@@ -42,14 +59,7 @@ const useGetSetting = () => {
       try {
         setLoading(true);
         const res = await SettingServices.getStoreCustomizationSetting();
-        const hasRemoteData =
-          res &&
-          Object.values(res).some((value) => {
-            if (value === null || value === undefined) return false;
-            if (Array.isArray(value)) return value.length > 0;
-            if (typeof value === "object") return Object.keys(value).length > 0;
-            return String(value).trim().length > 0;
-          });
+        const hasRemoteData = hasContent(res);
 
         const storeCustomizationSettingData = hasRemoteData
           ? {
@@ -96,11 +106,11 @@ const useGetSetting = () => {
     };
 
     // Check if the setting is not in the store and fetch it
-    if (!storeCustomizationSetting) {
+    if (shouldFetchStoreCustomization) {
       fetchAndAddSetting();
     }
 
-    if (!globalSetting) {
+    if (shouldFetchGlobalSetting) {
       fetchGlobalSetting();
     }
 
@@ -111,7 +121,7 @@ const useGetSetting = () => {
         secure: true,
       });
     }
-  }, [lang]);
+  }, [lang, shouldFetchGlobalSetting, shouldFetchStoreCustomization]);
 
   return {
     lang,
