@@ -11,20 +11,7 @@ import dayjs from "dayjs";
 import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
 import satLogo from "@/assets/img/logo/logo-text.png";
-
-const resolveTitle = (title) => {
-  if (!title) return "";
-  if (typeof title === "string") return title;
-  if (typeof title === "object") {
-    return (
-      title?.en ||
-      title?.fr ||
-      Object.values(title).find((val) => typeof val === "string") ||
-      ""
-    );
-  }
-  return String(title);
-};
+import { formatProductTitle } from "@/utils/productTitle";
 
 const resolvePrice = (item) => {
   if (typeof item?.price === "number") return item.price;
@@ -113,7 +100,7 @@ const InvoiceForPrint = ({ data, printRef, globalSetting }) => {
                       <TableCell className="py-1">
                         <span className="font-normal text-gray-600 bill">
                           {" "}
-                          {resolveTitle(item.title).substring(0, 15)}
+                          {formatProductTitle(item.title, 15)}
                         </span>
                       </TableCell>
                       <TableCell className="text-center py-1">
@@ -348,7 +335,7 @@ const InvoiceForPrint = ({ data, printRef, globalSetting }) => {
                     <TableCell className="py-1">
                       <span className="font-normal text-gray-600 bill">
                         {" "}
-                        {resolveTitle(item.title).substring(0, 15)}
+                        {formatProductTitle(item.title, 15)}
                       </span>
                     </TableCell>
                     <TableCell className="text-center py-1">

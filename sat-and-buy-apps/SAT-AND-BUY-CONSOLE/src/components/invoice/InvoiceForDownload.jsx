@@ -11,6 +11,7 @@ import {
 import { useTranslation } from "react-i18next";
 import satBuyLogo from "@/assets/img/logo/logo-text.png";
 import { formatAddressSnippet } from "@/utils/address";
+import { formatProductTitle } from "@/utils/productTitle";
 
 Font.register({
   family: "Open Sans",
@@ -539,7 +540,7 @@ const InvoiceForDownload = ({
               <View key={i} style={styles.tableRow}>
                 <View style={styles.tableCol}>
                   <Text style={styles.tableCell}>
-                    {item.title?.substring(0, 20)}
+                    {formatProductTitle(item.title, 20)}
                   </Text>
                 </View>
                 <View style={styles.tableCol}>
