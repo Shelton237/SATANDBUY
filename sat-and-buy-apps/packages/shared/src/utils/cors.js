@@ -8,7 +8,7 @@ const parseCorsOrigins = (value) => {
 
   return String(value)
     .split(",")
-    .map((origin) => origin.trim())
+    .map((origin) => origin.trim().replace(/^["']|["']$/g, ""))
     .filter(Boolean);
 };
 
