@@ -66,6 +66,22 @@ const createGatewayApp = (config) => {
         pathRewrite: rewritePrefix(/^\/api\/catalog/, "/api"),
       })
     );
+    [
+      "/api/category",
+      "/api/language",
+      "/api/coupon",
+      "/api/attributes",
+      "/api/products",
+      "/api/customer/market-lists",
+    ].forEach((route) => {
+      app.use(
+        route,
+        buildProxy(config.catalogUrl, {
+          logLevel: config.logLevel,
+          pathRewrite: rewriteOriginalPath,
+        })
+      );
+    });
   }
 
   if (config.orderUrl) {
