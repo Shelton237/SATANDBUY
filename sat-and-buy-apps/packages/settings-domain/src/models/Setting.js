@@ -1,17 +1,10 @@
-let sharedLib = null;
+let mongoose;
 try {
-  sharedLib = require("@satandbuy/shared");
+  const { mongo } = require("@satandbuy/shared");
+  mongoose = mongo.mongoose;
 } catch (err) {
-  try {
-    sharedLib = require("../../shared");
-  } catch (inner) {
-    sharedLib = null;
-  }
+  mongoose = require("mongoose");
 }
-
-const mongoose = sharedLib
-  ? sharedLib.mongo.mongoose
-  : require("mongoose");
 
 const settingSchema = new mongoose.Schema(
   {

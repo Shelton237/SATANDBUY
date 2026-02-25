@@ -5,6 +5,7 @@
   "main": "src/index.js",
   "license": "ISC",
   "dependencies": {
+    "@satandbuy/shared": "file:../shared",
     "mongoose": "^5.13.8"
   }
 }

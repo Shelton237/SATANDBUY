@@ -77,6 +77,7 @@ const getGlobalSetting = async (req, res) => {
     );
     res.send(globalSetting.setting || DEFAULT_GLOBAL_SETTING);
   } catch (err) {
+    console.error("[settings-domain] getGlobalSetting error", err);
     res.status(500).send({
       message: err.message,
     });
