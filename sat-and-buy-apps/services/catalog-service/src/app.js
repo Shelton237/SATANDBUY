@@ -21,7 +21,7 @@ const metrics = shared.metrics.createMetrics({
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || "*",
+    origin: shared.cors.buildCorsOriginOption(process.env.CORS_ORIGIN),
   })
 );
 app.use(express.json({ limit: "4mb" }));

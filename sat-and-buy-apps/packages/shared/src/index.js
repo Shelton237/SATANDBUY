@@ -14,4 +14,5 @@ module.exports = {
   logger: require("./logger"),
   telemetry: require("./telemetry"),
   metrics: require("./metrics"),
+  cors: require("./utils/cors"),
 };
