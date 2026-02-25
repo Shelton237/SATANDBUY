@@ -20,6 +20,38 @@ const buildProxy = (target, options = {}) =>
     ws: true,
   });
 
+const parseCorsOrigins = (value) => {
+  if (!value || value === "*") return "*";
+  if (Array.isArray(value)) return value;
+
+  return String(value)
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+};
+
+const buildCorsOriginOption = (origins) => {
+  const allowedOrigins = parseCorsOrigins(origins);
+  if (allowedOrigins === "*") {
+    return "*";
+  }
+
+  const allowed = new Set(allowedOrigins);
+  return (origin, callback) => {
+    if (!origin || allowed.has(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(
+      new Error(
+        `Origin ${origin} is not allowed by CORS. Allowed origins: ${[
+          ...allowed,
+        ].join(", ")}`
+      )
+    );
+  };
+};
+
 const createGatewayApp = (config) => {
   const app = express();
   const metrics = shared.metrics.createMetrics({
@@ -27,7 +59,7 @@ const createGatewayApp = (config) => {
   });
   app.use(
     cors({
-      origin: config.corsOrigin || "*",
+      origin: buildCorsOriginOption(config.corsOrigin),
       credentials: false,
     })
   );
