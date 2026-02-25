@@ -132,7 +132,7 @@ services:
       - catalog-service
       - order-service
     ports:
-      - "127.0.0.1:5055:5055"
+      - "0.0.0.0:5055:5055"
     networks:
       - satandbuy
 
