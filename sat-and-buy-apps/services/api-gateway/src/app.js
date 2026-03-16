@@ -18,6 +18,15 @@ const buildProxy = (target, options = {}) =>
     logLevel: options.logLevel || "warn",
     pathRewrite: options.pathRewrite,
     ws: true,
+    on: {
+      proxyRes: (proxyRes) => {
+        // Supprimer les headers CORS du service cible pour éviter les doublons avec ceux de la gateway
+        delete proxyRes.headers["access-control-allow-origin"];
+        delete proxyRes.headers["access-control-allow-credentials"];
+        delete proxyRes.headers["access-control-allow-methods"];
+        delete proxyRes.headers["access-control-allow-headers"];
+      },
+    },
   });
 
 const createGatewayApp = (config) => {

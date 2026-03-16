@@ -20,7 +20,14 @@ const buildCorsOriginOption = (origins) => {
 
   const allowed = new Set(allowedOrigins);
   return (origin, callback) => {
-    if (!origin || allowed.has(origin)) {
+    // En développement, on autorise localhost par défaut
+    const isDev = process.env.NODE_ENV === "development";
+    const isLocalhost =
+      origin &&
+      (origin.startsWith("http://localhost") ||
+        origin.startsWith("http://127.0.0.1"));
+
+    if (!origin || allowed.has(origin) || (isDev && isLocalhost)) {
       return callback(null, true);
     }
 

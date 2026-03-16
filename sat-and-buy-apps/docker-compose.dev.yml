@@ -1,4 +1,32 @@
 services:
+  api-gateway:
+    env_file:
+      - env/api-gateway.dev.env
+
+  auth-service:
+    env_file:
+      - env/auth-service.dev.env
+
+  catalog-service:
+    env_file:
+      - env/catalog-service.dev.env
+
+  order-service:
+    env_file:
+      - env/order-service.dev.env
+
+  settings-service:
+    env_file:
+      - env/settings-service.dev.env
+
+  notification-service:
+    env_file:
+      - env/notification-service.dev.env
+
+  delivery-service:
+    env_file:
+      - env/delivery-service.dev.env
+
   console:
     env_file:
       - env/console.dev.env
@@ -6,9 +34,10 @@ services:
   store:
     build:
       args:
-        NEXT_PUBLIC_API_BASE_URL: http://api-gateway:5055/api
-        NEXT_PUBLIC_API_SOCKET_URL: http://api-gateway:5055
-        NEXT_PUBLIC_STORE_DOMAIN: http://store:3000
-        NEXTAUTH_URL: http://store:3000
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:5055/api
+        NEXT_PUBLIC_API_SOCKET_URL: http://localhost:5055
+        NEXT_PUBLIC_STORE_DOMAIN: http://localhost:3000
+        NEXTAUTH_URL: http://localhost:3000
     env_file:
       - env/store.dev.env
+
