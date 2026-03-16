@@ -1,10 +1,13 @@
+import useUtilsFunction from "@/hooks/useUtilsFunction";
+
 const Price = ({ product, price, currency }) => {
+  const { getNumberTwo, currency: globalCurrency } = useUtilsFunction();
+  const currentCurrency = currency || globalCurrency || "FCFA";
+  const amount = price || product?.prices?.originalPriceWithTax || 0;
+
   return (
     <div className="font-serif product-price font-bold dark:text-gray-400">
-      {currency ? currency : '$'}
-      {price
-        ? Number(price).toFixed(2)
-        : Number(product?.prices?.originalPriceWithTax).toFixed(2)}
+      {getNumberTwo(amount)} {currentCurrency}
     </div>
   );
 };

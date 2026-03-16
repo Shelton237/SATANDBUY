@@ -3,9 +3,8 @@ import Cookies from "js-cookie";
 import useGetSetting from "./useGetSetting";
 
 const useUtilsFunction = () => {
-  const lang = Cookies.get("_lang");
-
   const { globalSetting } = useGetSetting();
+  const lang = Cookies.get("_lang") || globalSetting?.default_language || "en";
 
   const currency = globalSetting?.default_currency || "$";
 

@@ -9,7 +9,7 @@ import { useDispatch } from "react-redux";
 const SUPPORTED_LANGUAGES = ["en", "fr"];
 const normalizeLanguage = (langCode) => {
   const base = (langCode || "").split("-")[0]?.toLowerCase();
-  return SUPPORTED_LANGUAGES.includes(base) ? base : "en";
+  return SUPPORTED_LANGUAGES.includes(base) ? base : "fr";
 };
 
 // create context
@@ -27,7 +27,7 @@ export const SidebarProvider = ({ children }) => {
   const [isBulkDrawerOpen, setIsBulkDrawerOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUpdate, setIsUpdate] = useState(false);
-  const [lang, setLang] = useState("en");
+  const [lang, setLang] = useState("fr");
   const [time, setTime] = useState("");
   const [sortedField, setSortedField] = useState("");
   const [currentPage, setCurrentPage] = useState(1);

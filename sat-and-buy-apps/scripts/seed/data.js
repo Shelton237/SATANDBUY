@@ -115,7 +115,7 @@ const languages = [
     name: "English",
     iso_code: "en",
     flag: "https://flagcdn.com/w40/gb.png",
-    status: "show",
+    status: "hide",
   },
   {
     _id: objectId(),
@@ -138,7 +138,7 @@ const currencies = [
     _id: objectId(),
     name: "USD",
     symbol: "$",
-    status: "show",
+    status: "hide",
     live_exchange_rates: "hide",
   },
 ];
@@ -759,6 +759,7 @@ module.exports = {
         email: "contact@satandbuy.cm",
         default_currency: "FCFA",
         default_language: "fr",
+        floating_number: 0,
       },
     },
     {
