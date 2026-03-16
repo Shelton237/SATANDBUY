@@ -23,7 +23,7 @@ const EmailVerification = ({ params }) => {
         router.push("/");
         setLoading(false);
         setSuccess(res.message);
-        notifySuccess("Register Success!");
+        notifySuccess("Inscription réussie !");
       } catch (error) {
         setLoading(false);
         setError(err ? err.response.data.message : err.message);

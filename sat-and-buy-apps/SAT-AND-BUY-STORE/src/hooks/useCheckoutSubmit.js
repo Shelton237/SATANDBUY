@@ -339,7 +339,7 @@ const useCheckoutSubmit = (storeSetting) => {
         await NotificationServices.addNotification(notificationInfo);
 
         router.push(`/order/${orderResponse?._id}`);
-        notifySuccess("Your Order Confirmed!");
+        notifySuccess("Votre commande est confirmée !");
         Cookies.remove("couponInfo");
 
         emptyCart();
@@ -387,7 +387,7 @@ const useCheckoutSubmit = (storeSetting) => {
       await NotificationServices.addNotification(notificationInfo);
 
       router.push(`/order/${orderResponse._id}`);
-      notifySuccess("Your Order Confirmed!");
+      notifySuccess("Votre commande est confirmée !");
       Cookies.remove("couponInfo");
       emptyCart();
 
@@ -440,7 +440,7 @@ const useCheckoutSubmit = (storeSetting) => {
             const res = await OrderServices.addRazorpayOrder(orderData);
             if (res) {
               router.push(`/order/${res._id}`);
-              notifySuccess("Your Order Confirmed!");
+              notifySuccess("Votre commande est confirmée !");
               Cookies.remove("couponInfo");
               localStorage.removeItem("products");
               emptyCart();
@@ -537,7 +537,7 @@ const useCheckoutSubmit = (storeSetting) => {
     e.preventDefault();
 
     if (!couponRef.current.value) {
-      notifyError("Please Input a Coupon Code!");
+      notifyError("Veuillez entrer un code promo !");
       return;
     }
     setIsCouponAvailable(true);
@@ -550,12 +550,12 @@ const useCheckoutSubmit = (storeSetting) => {
       setIsCouponAvailable(false);
 
       if (result.length < 1) {
-        notifyError("Please Input a Valid Coupon!");
+        notifyError("Veuillez entrer un code de réduction valide !");
         return;
       }
 
       if (dayjs().isAfter(dayjs(result[0]?.endTime))) {
-        notifyError("This coupon is not valid!");
+        notifyError("Ce code promo n'est pas valide !");
         return;
       }
 

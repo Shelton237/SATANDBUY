@@ -49,7 +49,7 @@ const UpdateProfile = () => {
       setLoading(false);
       persistUserSession(res);
       dispatch({ type: "USER_LOGIN", payload: res });
-      notifySuccess("Profile Update Successfully!");
+      notifySuccess("Profil mis à jour avec succès !");
     } catch (error) {
       setLoading(false);
       notifyError(error?.response?.data?.message || error?.message);

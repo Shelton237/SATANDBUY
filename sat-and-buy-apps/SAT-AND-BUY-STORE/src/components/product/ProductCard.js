@@ -30,7 +30,7 @@ const ProductCard = ({ product, attributes }) => {
   // console.log('attributes in product cart',attributes)
 
   const handleAddItem = (p) => {
-    if (p.stock < 1) return notifyError("Insufficient stock!");
+    if (p.stock < 1) return notifyError("Stock insuffisant !");
 
     if (p?.variants?.length > 0) {
       setModalOpen(!modalOpen);

@@ -166,9 +166,9 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
 
   const handleAddToCart = (p) => {
     if (p.variants.length === 1 && p.variants[0].quantity < 1)
-      return notifyError("Insufficient stock");
+      return notifyError("Stock insuffisant !");
     // if (notAvailable) return notifyError('This Variation Not Available Now!');
-    if (stock <= 0) return notifyError("Insufficient stock");
+    if (stock <= 0) return notifyError("Stock insuffisant !");
     // console.log('selectVariant', selectVariant);
 
     if (
@@ -213,7 +213,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
       };
       handleAddItem(newItem);
     } else {
-      return notifyError("Please select all variant first!");
+      return notifyError("Veuillez sélectionner toutes les variantes d'abord !");
     }
   };
 

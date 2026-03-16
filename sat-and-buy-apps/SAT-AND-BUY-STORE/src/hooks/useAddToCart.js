@@ -31,9 +31,9 @@ const useAddToCart = () => {
           : product?.stock)
       ) {
         addItem(updatedProduct, item);
-        notifySuccess(`${item} ${product.title} added to cart!`);
+        notifySuccess(`${item} ${product.title} ajouté au panier !`);
       } else {
-        notifyError("Insufficient stock!");
+        notifyError("Stock insuffisant !");
       }
     } else {
       if (
@@ -43,9 +43,9 @@ const useAddToCart = () => {
           : product?.stock)
       ) {
         addItem(updatedProduct, item);
-        notifySuccess(`${item} ${product.title} added to cart!`);
+        notifySuccess(`${item} ${product.title} ajouté au panier !`);
       } else {
-        notifyError("Insufficient stock!");
+        notifyError("Stock insuffisant !");
       }
     }
   };
@@ -69,7 +69,7 @@ const useAddToCart = () => {
       ) {
         updateItemQuantity(product.id, product.quantity + 1);
       } else {
-        notifyError("Insufficient stock!");
+        notifyError("Stock insuffisant !");
       }
     }
   };

@@ -12,7 +12,7 @@ const createInstance = (baseURL) =>
 
 const transformUrl = (url) => {
   if (!url) return url;
-  if (typeof window === "undefined") {
+  if (process.env.USE_DOCKER_NETWORK === "true" && typeof window === "undefined") {
     return url
       .replace("localhost:5055", "api-gateway:5055")
       .replace("127.0.0.1:5055", "api-gateway:5055")

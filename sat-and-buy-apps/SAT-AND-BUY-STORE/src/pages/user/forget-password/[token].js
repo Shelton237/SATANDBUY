@@ -57,7 +57,7 @@ const ForgetPassword = () => {
         .then((res) => {
           setLoading(false);
           router.push("/");
-          notifySuccess("Login Success!");
+          notifySuccess("Connexion réussie !");
           dispatch({ type: "USER_LOGIN", payload: res });
           persistUserSession(res);
         })

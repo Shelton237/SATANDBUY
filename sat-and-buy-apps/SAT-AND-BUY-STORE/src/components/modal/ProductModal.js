@@ -151,9 +151,9 @@ const ProductModal = ({
 
   const handleAddToCart = (p) => {
     if (p.variants.length === 1 && p.variants[0].quantity < 1)
-      return notifyError("Insufficient stock");
+      return notifyError("Stock insuffisant !");
 
-    if (stock <= 0) return notifyError("Insufficient stock");
+    if (stock <= 0) return notifyError("Stock insuffisant !");
 
     if (
       product?.variants.map(
@@ -199,7 +199,7 @@ const ProductModal = ({
 
       handleAddItem(newItem);
     } else {
-      return notifyError("Please select all variant first!");
+      return notifyError("Veuillez sélectionner toutes les variantes d'abord !");
     }
   };
 
