@@ -8,7 +8,7 @@ const CheckoutCard = ({ item }) => {
   const { updateItemQuantity } = useCart();
   const { data: globalSetting } = useAsync(SettingServices.getGlobalSetting);
 
-  const currency = globalSetting?.default_currency || "$";
+  const currency = globalSetting?.default_currency || "FCFA";
 
   return (
     <div

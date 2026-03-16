@@ -6,7 +6,7 @@ const useUtilsFunction = () => {
   const { globalSetting } = useGetSetting();
   const lang = Cookies.get("_lang") || globalSetting?.default_language || "en";
 
-  const currency = globalSetting?.default_currency || "$";
+  const currency = globalSetting?.default_currency || "FCFA";
 
   //for date and time format
   const showTimeFormat = (data, timeFormat) => {
