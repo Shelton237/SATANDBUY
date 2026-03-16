@@ -26,6 +26,12 @@ const CONNECTIONS = {
     fallbackUri: "mongodb://127.0.0.1:27017/satandbuy_orders",
     dbName: "satandbuy_orders",
   },
+  settings: {
+    label: "settings-service",
+    envPath: "services/settings-service/.env",
+    fallbackUri: "mongodb://127.0.0.1:27017/satandbuy_settings",
+    dbName: "satandbuy_settings",
+  },
 };
 
 const parseEnvFile = (relativePath) => {

@@ -1,6 +1,6 @@
 "use strict";
 
-const { authSeeds, catalogSeeds, orderSeeds } = require("./data");
+const { authSeeds, catalogSeeds, orderSeeds, settingsSeeds } = require("./data");
 const { withServiceDatabase } = require("./utils");
 
 const seedAuth = async () => {
@@ -61,6 +61,16 @@ const seedOrder = async () => {
   });
 };
 
+const seedSettings = async () => {
+  const Setting = require("../../packages/settings-domain/src/models/Setting");
+
+  await withServiceDatabase("settings", async () => {
+    await Setting.deleteMany({});
+    await Setting.insertMany(settingsSeeds);
+    console.log(`  → Paramètres insérés (${settingsSeeds.length} blocs)`);
+  });
+};
+
 const run = async () => {
   console.log("Seeding Sat & Buy datasets...");
   console.log("1) Auth service");
@@ -69,6 +79,8 @@ const run = async () => {
   await seedCatalog();
   console.log("3) Order service");
   await seedOrder();
+  console.log("4) Settings service");
+  await seedSettings();
   console.log("✔ Données injectées avec succès.");
 };
 
