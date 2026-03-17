@@ -25,7 +25,7 @@ const Search = ({ products, attributes }) => {
   const { setSortedField, productData } = useFilter(products);
 
   return (
-    <Layout title="Search" description="This is search page">
+    <Layout title={t("common:search-page")} description={t("common:search-page-desc")}>
       <div className="mx-auto max-w-screen-2xl px-3 sm:px-10">
         <div className="flex py-10 lg:py-12">
           <div className="flex w-full">

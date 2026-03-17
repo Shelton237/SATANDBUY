@@ -1,4 +1,4 @@
-import { useSearchParams } from "next/navigation";
+import { useRouter } from "next/router";
 
 //internal imports
 import Dashboard from "./dashboard";
@@ -9,7 +9,8 @@ import SelectOption from "@components/form/SelectOption";
 import useShippingAddressSubmit from "@hooks/useShippingAddressSubmit";
 
 const AddShippingAddress = () => {
-  const id = useSearchParams().get("id");
+  const router = useRouter();
+  const { id } = router.query;
 
   //   console.log("id", id);
 

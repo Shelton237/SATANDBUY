@@ -1,7 +1,7 @@
 import { useRouter } from "next/router";
 import { useContext, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useSearchParams } from "next/navigation";
+
 
 //internal import
 
@@ -13,7 +13,7 @@ import { persistUserSession } from "@lib/auth";
 const useLoginSubmit = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const redirectUrl = useSearchParams().get("redirectUrl");
+  const { redirectUrl } = router.query;
   const { dispatch } = useContext(UserContext);
 
   const {
@@ -26,8 +26,10 @@ const useLoginSubmit = () => {
     setLoading(true);
     try {
       const user = await CustomerServices.loginCustomer({ email, password });
-      persistUserSession(user);
-      dispatch({ type: "USER_LOGIN", payload: user });
+      const normalizedUser =
+        user && !user.id && user._id ? { ...user, id: user._id } : user;
+      persistUserSession(normalizedUser);
+      dispatch({ type: "USER_LOGIN", payload: normalizedUser });
       notifySuccess("Connexion réussie !");
       const url = redirectUrl
         ? decodeURIComponent(redirectUrl)

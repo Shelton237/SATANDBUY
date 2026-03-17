@@ -229,7 +229,12 @@ const readyToParentAndChildrenCategory = (categories, parentId = null) => {
   const categoryList = [];
   let Categories;
   if (parentId == null) {
-    Categories = categories.filter((cat) => cat.parentId == undefined);
+    Categories = categories.filter(
+      (cat) =>
+        cat.parentId == undefined ||
+        cat.parentId == null ||
+        cat.parentId === ""
+    );
   } else {
     Categories = categories.filter((cat) => cat.parentId == parentId);
   }

@@ -1,6 +1,8 @@
 import React from "react";
 import Image from "next/image";
 
+import useTranslation from "next-translate/useTranslation";
+
 //internal import
 import Layout from "@layout/Layout";
 import useGetSetting from "@hooks/useGetSetting";
@@ -9,13 +11,14 @@ import CMSkeleton from "@components/preloader/CMSkeleton";
 import useUtilsFunction from "@hooks/useUtilsFunction";
 
 const AboutUs = () => {
+  const { t } = useTranslation();
   const { storeCustomizationSetting, loading, error } = useGetSetting();
   const { showingTranslateValue } = useUtilsFunction();
 
   // console.log("data", data, );
 
   return (
-    <Layout title="About Us" description="This is about us page">
+    <Layout title={t("common:about-us-page")} description={t("common:about-us-page-desc")}>
       <PageHeader
         headerBg={storeCustomizationSetting?.about_us?.header_bg}
         title={showingTranslateValue(

@@ -1,10 +1,17 @@
 import dayjs from "dayjs";
 import Cookies from "js-cookie";
+import { useRouter } from "next/router";
 import useGetSetting from "./useGetSetting";
 
 const useUtilsFunction = () => {
   const { globalSetting } = useGetSetting();
-  const lang = Cookies.get("_lang") || globalSetting?.default_language || "en";
+  const router = useRouter();
+  // Priorité : locale Next.js (toujours fiable) > cookie > paramètre global > fallback "fr"
+  const lang =
+    router.locale ||
+    Cookies.get("_lang") ||
+    globalSetting?.default_language ||
+    "fr";
 
   const currency = globalSetting?.default_currency || "FCFA";
 

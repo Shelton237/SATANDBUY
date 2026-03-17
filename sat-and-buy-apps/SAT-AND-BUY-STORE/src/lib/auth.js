@@ -14,10 +14,15 @@ const safeParse = (value) => {
 
 const normalizeUser = (payload) => {
   if (!payload || typeof payload !== "object") return payload;
-  if (!payload.id && payload._id) {
-    return { ...payload, id: payload._id };
+  let user = { ...payload };
+  if (payload.user && typeof payload.user === "object") {
+    user = { ...payload, ...payload.user };
+    delete user.user;
   }
-  return payload;
+  if (!user.id && user._id) {
+    user.id = user._id;
+  }
+  return user;
 };
 
 const readFromStorage = () => {

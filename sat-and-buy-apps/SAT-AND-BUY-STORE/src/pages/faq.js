@@ -3,6 +3,8 @@ import Image from "next/image";
 import { Disclosure } from "@headlessui/react";
 import { ChevronUpIcon } from "@heroicons/react/solid";
 
+import useTranslation from "next-translate/useTranslation";
+
 //internal import
 import Layout from "@layout/Layout";
 import useGetSetting from "@hooks/useGetSetting";
@@ -10,11 +12,12 @@ import PageHeader from "@components/header/PageHeader";
 import useUtilsFunction from "@hooks/useUtilsFunction";
 
 const Faq = () => {
+  const { t } = useTranslation();
   const { storeCustomizationSetting } = useGetSetting();
   const { showingTranslateValue } = useUtilsFunction();
 
   return (
-    <Layout title="FAQ" description="This is faq page">
+    <Layout title={t("common:faq-page")} description={t("common:faq-page-desc")}>
       <PageHeader
         headerBg={storeCustomizationSetting?.faq?.header_bg}
         title={showingTranslateValue(storeCustomizationSetting?.faq?.title)}

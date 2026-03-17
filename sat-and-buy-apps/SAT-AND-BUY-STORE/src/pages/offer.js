@@ -1,3 +1,5 @@
+import useTranslation from "next-translate/useTranslation";
+
 //internal import
 import Layout from "@layout/Layout";
 import Coupon from "@components/coupon/Coupon";
@@ -6,13 +8,14 @@ import useGetSetting from "@hooks/useGetSetting";
 import useUtilsFunction from "@hooks/useUtilsFunction";
 
 const Offer = () => {
+  const { t } = useTranslation();
   const { storeCustomizationSetting } = useGetSetting();
   const { showingTranslateValue } = useUtilsFunction();
 
   // console.log("storeCustomizationSetting", storeCustomizationSetting);
 
   return (
-    <Layout title="Offer" description="this is discount page">
+    <Layout title={t("common:offer-page")} description={t("common:offer-page-desc")}>
       <PageHeader
         headerBg={storeCustomizationSetting?.offers?.header_bg}
         title={showingTranslateValue(storeCustomizationSetting?.offers?.title)}

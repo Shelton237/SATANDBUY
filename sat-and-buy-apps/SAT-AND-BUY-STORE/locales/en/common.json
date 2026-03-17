@@ -37,12 +37,27 @@
   "/=================*page*==================/": "",
   "offer-page": "Offer",
   "checkout-page": "Checkout",
-  "faq-page": " FAQ",
-  "about-us-page": " About Us",
+  "faq-page": "FAQ",
+  "about-us-page": "About Us",
   "contact-us-page": "Contact Us",
-  "privacy-policy-page": " Privacy Policy",
+  "privacy-policy-page": "Privacy Policy",
   "terms-and-conditions-page": "Terms & Conditions",
   "not-found-page": "404",
+  "search-page": "Search",
+  "invoice-page": "Invoice",
+  "signup-page": "Signup",
+  "login-page": "Login",
+  "offer-page-desc": "Check our latest offers and discounts",
+  "checkout-page-desc": "Securely complete your purchase",
+  "faq-page-desc": "Frequently asked questions",
+  "about-us-page-desc": "Learn more about Sat&Buy",
+  "contact-us-page-desc": "Contact us for support",
+  "privacy-policy-page-desc": "Our privacy policy",
+  "terms-and-conditions-page-desc": "Terms and conditions of use",
+  "search-page-desc": "Search for your favorite products",
+  "invoice-page-desc": "Your order confirmation",
+  "signup-page-desc": "Create your Sat&Buy account",
+  "login-page-desc": "Log in to your account",
 
   "/=================*Offer Card*=================/": "",
   "mega-offer": "Mega Offer",
@@ -124,6 +139,8 @@
 
   "footer-follow-us": "Follow Us",
   "footer-call-us": "Call Us Today!",
+  "footer-copyright-text": "Copyright",
+  "footer-rights-text": "All rights reserved.",
 
   "/=================* About Us* =================/": "",
 
@@ -149,6 +166,7 @@
   "/=================* Contact Us* =================/": "",
 
   "contact-page-title": "Contact Us",
+  "contact-page-meta-description": "Contact us for any questions or support. We are available 24/7.",
 
   "contact-page-box1-title": "Email Us",
   "contact-page-box1-info": "Interactively grow empowered for process-centric total linkage.",
@@ -171,6 +189,8 @@
   "contact-page-form-input-message": "Message",
   "contact-page-form-plaholder-message": "Write your message here",
   "contact-page-form-send-btn": "Send Message",
+  "contact-page-success-message": "Your message was sent successfully. We will contact you shortly.",
+  "contact-page-message-required": "Message is required!",
 
   "/=================* Single Product More Info* =================/": "",
 

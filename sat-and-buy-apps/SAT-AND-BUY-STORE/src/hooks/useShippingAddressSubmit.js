@@ -1,7 +1,7 @@
 import { notifyError, notifySuccess } from "@utils/toast";
 import { useContext, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/router";
 
 //internal import
 import { UserContext } from "@context/UserContext";

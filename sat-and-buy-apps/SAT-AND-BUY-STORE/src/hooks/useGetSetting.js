@@ -116,7 +116,7 @@ const useGetSetting = () => {
 
     // Check if the "lang" value is not set and set a default value
     if (!lang) {
-      Cookies.set("_lang", "en", {
+      Cookies.set("_lang", "fr", {
         sameSite: "None",
         secure: true,
       });

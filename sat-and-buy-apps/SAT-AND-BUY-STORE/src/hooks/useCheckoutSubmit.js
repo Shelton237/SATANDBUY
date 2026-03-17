@@ -1,6 +1,6 @@
 import Cookies from "js-cookie";
 import dayjs from "dayjs";
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/router";
 import { useContext, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useCart } from "react-use-cart";
@@ -9,6 +9,7 @@ import { CardElement, useElements, useStripe } from "@stripe/react-stripe-js";
 
 //internal import
 import { UserContext } from "@context/UserContext";
+import { getUserSession } from "@lib/auth";
 import OrderServices from "@services/OrderServices";
 import CouponServices from "@services/CouponServices";
 import { notifyError, notifySuccess } from "@utils/toast";
@@ -230,7 +231,8 @@ const useCheckoutSubmit = (storeSetting) => {
 
   useEffect(() => {
     if (userInfo === undefined) return;
-    if (!userInfo?.id) {
+    const session = userInfo || getUserSession();
+    if (!session || !session.id) {
       router.replace("/auth/login?redirectUrl=%2Fcheckout");
     }
   }, [router, userInfo]);

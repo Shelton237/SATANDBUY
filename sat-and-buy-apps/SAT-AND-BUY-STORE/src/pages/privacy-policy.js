@@ -1,4 +1,5 @@
 import React from "react";
+import useTranslation from "next-translate/useTranslation";
 
 //internal import
 import Layout from "@layout/Layout";
@@ -8,12 +9,13 @@ import CMSkeleton from "@components/preloader/CMSkeleton";
 import useUtilsFunction from "@hooks/useUtilsFunction";
 
 const PrivacyPolicy = () => {
+  const { t } = useTranslation();
   const { storeCustomizationSetting, loading, error } = useGetSetting();
   const { showingTranslateValue } = useUtilsFunction();
   // console.log("data", storeCustomizationSetting);
 
   return (
-    <Layout title="Privacy Policy" description="This is privacy policy page">
+    <Layout title={t("common:privacy-policy-page")} description={t("common:privacy-policy-page-desc")}>
       <PageHeader
         headerBg={storeCustomizationSetting?.privacy_policy?.header_bg}
         title={showingTranslateValue(

@@ -451,16 +451,15 @@ const Footer = () => {
 
       <div className="mx-auto max-w-screen-2xl px-3 sm:px-10 flex justify-center py-4">
         <p className="text-sm text-gray-500 leading-6">
-          Copyright 2024 @{" "}
+          {t("common:footer-copyright-text")} 2024 @{" "}
           <Link
             href="/"
-
             rel="noopener noreferrer"
             className="text-emerald-500"
           >
             Sat & Buy
           </Link>
-          , All rights reserved.
+          , {t("common:footer-rights-text")}
         </p>
       </div>
     </div>

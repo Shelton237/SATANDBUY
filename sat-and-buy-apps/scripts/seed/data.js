@@ -115,7 +115,7 @@ const languages = [
     name: "English",
     iso_code: "en",
     flag: "https://flagcdn.com/w40/gb.png",
-    status: "hide",
+    status: "show",
   },
   {
     _id: objectId(),
@@ -772,16 +772,16 @@ module.exports = {
           block1_sub_link1: "/about-us",
           block1_sub_title2: { en: "Contact Us", fr: "Contactez-nous" },
           block1_sub_link2: "/contact-us",
-          
+
           block4_status: true,
           block4_address: "Douala, Cameroon",
           block4_phone: "+237 690 000 000",
           block4_email: "contact@satandbuy.cm",
-          
+
           social_links_status: true,
           social_facebook: "https://facebook.com/satandbuy",
           social_twitter: "https://twitter.com/satandbuy",
-          
+
           bottom_contact_status: true,
           bottom_contact: "+237 690 000 000",
         },
@@ -791,6 +791,23 @@ module.exports = {
           featured_status: true,
           popular_title: { en: "Popular in Cameroon", fr: "Populaire au Cameroun" },
           latest_discount_title: { en: "Best Deals", fr: "Meilleures Offres" }
+        },
+        contact_us: {
+          title: { en: "Contact Us", fr: "Contactez-nous" },
+          header_bg: "/contact-header-bg.png",
+          email_box_title: { en: "Email Us", fr: "Envoyez-nous un email" },
+          email_box_email: { en: "contact@satandbuy.cm", fr: "contact@satandbuy.cm" },
+          email_box_text: { en: "Interactively grow empowered for process-centric total linkage.", fr: "Nous sommes disponibles pour répondre à toutes vos questions." },
+          call_box_title: { en: "Call Us", fr: "Appelez-nous" },
+          call_box_phone: { en: "+237 690 000 000", fr: "+237 690 000 000" },
+          call_box_text: { en: "Distinctively disseminate focused solutions clicks-and-mortar ministate.", fr: "Notre service client est à votre écoute 24h/24 et 7j/7." },
+          address_box_title: { en: "Location", fr: "Localisation" },
+          address_box_address_one: { en: "Akwa, Douala", fr: "Akwa, Douala" },
+          address_box_address_two: { en: "Cameroon", fr: "Cameroun" },
+          address_box_address_three: { en: "BP 125", fr: "BP 125" },
+          midLeft_col_img: "/contact-us.png",
+          form_title: { en: "For any support, leave us a message", fr: "Pour toute assistance, laissez-nous un message" },
+          form_description: { en: "We'd love to hear from you! Please fill out the form below.", fr: "Nous serons ravis de vous lire ! Veuillez remplir le formulaire ci-dessous." }
         }
       },
     },

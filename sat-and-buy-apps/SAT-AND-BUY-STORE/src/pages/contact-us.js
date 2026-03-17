@@ -27,13 +27,11 @@ const ContactUs = () => {
   const { storeCustomizationSetting, loading, error } = useGetSetting();
 
   const submitHandler = () => {
-    notifySuccess(
-      "your message sent successfully. We will contact you shortly."
-    );
+    notifySuccess(t("common:contact-page-success-message"));
   };
 
   return (
-    <Layout title="Contact Us" description="This is contact us page">
+    <Layout title={t("common:contact-page-title")} description={t("common:contact-page-meta-description")}>
       <PageHeader
         headerBg={storeCustomizationSetting?.contact_us?.header_bg}
         title={showingTranslateValue(
@@ -236,7 +234,7 @@ const ContactUs = () => {
                     />
                     <textarea
                       {...register("message", {
-                        required: `Message is required!`,
+                        required: t("common:contact-page-message-required"),
                       })}
                       name="message"
                       className="px-4 py-3 flex items-center w-full rounded appearance-none opacity-75 transition duration-300 ease-in-out text-sm focus:ring-0 bg-white border border-gray-300 focus:shadow-none focus:outline-none focus:border-gray-500 placeholder-body"

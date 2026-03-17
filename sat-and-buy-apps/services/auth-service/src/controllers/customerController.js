@@ -31,7 +31,14 @@ const login = async (req, res, next) => {
     const payload = await buildAuthResponse(customer, CLIENT);
     res.send({
       ...payload,
-      user: customer,
+      id: customer._id,
+      _id: customer._id,
+      name: customer.name,
+      email: customer.email,
+      address: customer.address,
+      phone: customer.phone,
+      image: customer.image,
+      role: customer.role || CLIENT,
     });
   } catch (err) {
     next(err);
@@ -76,7 +83,14 @@ const registerViaToken = async (req, res, next) => {
       return res.send({
         ...payload,
         message: "Email déjà vérifié.",
-        user: existing,
+        id: existing._id,
+        _id: existing._id,
+        name: existing.name,
+        email: existing.email,
+        address: existing.address,
+        phone: existing.phone,
+        image: existing.image,
+        role: existing.role || CLIENT,
       });
     }
     const customer = await Customer.create({
@@ -88,7 +102,14 @@ const registerViaToken = async (req, res, next) => {
     res.status(201).send({
       ...payload,
       message: "Email vérifié, vous êtes connecté.",
-      user: customer,
+      id: customer._id,
+      _id: customer._id,
+      name: customer.name,
+      email: customer.email,
+      address: customer.address,
+      phone: customer.phone,
+      image: customer.image,
+      role: customer.role || CLIENT,
     });
   } catch (err) {
     next(err);
@@ -114,7 +135,14 @@ const registerDirect = async (req, res, next) => {
     res.status(201).send({
       ...payload,
       message: "Compte créé avec succès.",
-      user: customer,
+      id: customer._id,
+      _id: customer._id,
+      name: customer.name,
+      email: customer.email,
+      address: customer.address,
+      phone: customer.phone,
+      image: customer.image,
+      role: customer.role || CLIENT,
     });
   } catch (err) {
     next(err);
@@ -138,7 +166,14 @@ const oauthSignup = async (req, res, next) => {
     const payload = await buildAuthResponse(customer, CLIENT);
     res.send({
       ...payload,
-      user: customer,
+      id: customer._id,
+      _id: customer._id,
+      name: customer.name,
+      email: customer.email,
+      address: customer.address,
+      phone: customer.phone,
+      image: customer.image,
+      role: customer.role || CLIENT,
     });
   } catch (err) {
     next(err);
@@ -162,7 +197,14 @@ const signupWithProviderToken = async (req, res, next) => {
     const payload = await buildAuthResponse(customer, CLIENT);
     res.send({
       ...payload,
-      user: customer,
+      id: customer._id,
+      _id: customer._id,
+      name: customer.name,
+      email: customer.email,
+      address: customer.address,
+      phone: customer.phone,
+      image: customer.image,
+      role: customer.role || CLIENT,
     });
   } catch (err) {
     next(err);

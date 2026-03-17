@@ -4,6 +4,8 @@ import { useRef } from "react";
 import { IoCloudDownloadOutline, IoPrintOutline } from "react-icons/io5";
 import ReactToPrint from "react-to-print";
 
+import useTranslation from "next-translate/useTranslation";
+
 //internal import
 
 import Layout from "@layout/Layout";
@@ -16,6 +18,7 @@ import useUtilsFunction from "@hooks/useUtilsFunction";
 import InvoiceForDownload from "@components/invoice/InvoiceForDownload";
 
 const Order = ({ params }) => {
+  const { t } = useTranslation();
   const printRef = useRef();
   const orderId = params.id;
   const { data, loading, error } = useAsync(() =>
@@ -26,7 +29,7 @@ const Order = ({ params }) => {
   const { storeCustomizationSetting, globalSetting } = useGetSetting();
 
   return (
-    <Layout title="Invoice" description="order confirmation page">
+    <Layout title={t("common:invoice-page")} description={t("common:invoice-page-desc")}>
       {loading ? (
         <Loading loading={loading} />
       ) : error ? (
