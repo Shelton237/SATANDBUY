@@ -35,29 +35,42 @@ const emitOrderEvent = (eventName, orderDoc, extra = {}) => {
     status: orderDoc.status,
     customerId: orderDoc.user,
     total: orderDoc.total,
+    cart: orderDoc.cart,
     ...extra,
   };
   publish(eventName, payload);
 };
 
 const addOrder = async (req, res) => {
-  // console.log("addOrder", req.body);
+  console.log("[order-domain] addOrder Start. Body:", req.body);
   try {
     const newOrder = new Order({
       ...req.body,
       user: req.user._id,
     });
+    console.log("[order-domain] saving newOrder...");
     const order = await newOrder.save();
+    console.log("[order-domain] order saved successfully! ID:", order._id);
+    
     res.status(201).send(order);
-    handleProductQuantity(order.cart);
-    emitOrderEvent(ORDER_EVENTS.ORDER_PLACED, order, {
-      paymentMethod: "razorpay",
-    });
-    emitOrderEvent(ORDER_EVENTS.ORDER_PLACED, order);
+    console.log("[order-domain] Response 201 sent to client.");
+
+    try {
+      emitOrderEvent(ORDER_EVENTS.ORDER_PLACED, order, {
+        paymentMethod: order.paymentMethod || "pending",
+      });
+      console.log("[order-domain] emitOrderEvent triggered.");
+    } catch(eventErr) {
+      console.error("[order-domain] emitOrderEvent failed asynchronously:", eventErr);
+    }
   } catch (err) {
-    res.status(500).send({
-      message: err.message,
-    });
+    console.error("[order-domain] addOrder error", err);
+    // ensure we don't crash before responding if possible
+    if (!res.headersSent) {
+      res.status(500).send({
+        message: err.message,
+      });
+    }
   }
 };
 
