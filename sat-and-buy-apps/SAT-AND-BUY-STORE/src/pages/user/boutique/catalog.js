@@ -1,4 +1,5 @@
 import dynamic from "next/dynamic";
+import axios from "axios";
 import { useState, useEffect, useContext } from "react";
 import {
   IoAdd, IoClose, IoPencil, IoTrash, IoCheckmarkCircle,
@@ -54,8 +55,11 @@ const SubmitProductModal = ({ categories, boutiqueId, editProduct, onClose, onSa
     if (!file) return;
     setUploadingImage(true);
     try {
-      const res = await BoutiqueServices.uploadImage(file);
-      set("image", [res.url]);
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET);
+      const res = await axios.post(process.env.NEXT_PUBLIC_CLOUDINARY_URL, formData);
+      set("image", [res.data.secure_url]);
       notifySuccess("Image uploadée.");
     } catch {
       notifyError("Erreur lors de l'upload de l'image.");
