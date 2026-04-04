@@ -9,9 +9,11 @@ const {
   updateShippingRate,
   deleteShippingRate,
   getPublicShippingRates,
+  getPublicLocations,
 } = shippingRateController;
 
 router.get("/public", getPublicShippingRates);
+router.get("/locations", getPublicLocations);
 router.get("/", isAuth, getShippingRates);
 router.post("/", isAuth, createShippingRate);
 router.put("/:id", isAuth, updateShippingRate);

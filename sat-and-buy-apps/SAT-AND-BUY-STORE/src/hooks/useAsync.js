@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
+import { clearUserSession } from "@lib/auth";
 
 const useAsync = (asyncFunction) => {
   const [data, setData] = useState([] || {});
@@ -23,15 +24,11 @@ const useAsync = (asyncFunction) => {
       } catch (err) {
         setErrCode(err?.response?.status);
         if (!unmounted) {
-          console.log(err.message);
+          console.log("API Error:", err.message);
           setError(err.message);
           if (axios.isCancel(err)) {
-            setError(err.message);
             setLoading(false);
-            setData({});
           } else {
-            // console.log('another error happened:' + err.message);
-            setError(err.message);
             setLoading(false);
             setData({});
           }
@@ -43,14 +40,13 @@ const useAsync = (asyncFunction) => {
       unmounted = true;
       source.cancel("Cancelled in cleanup");
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    // }, [currentPage]);
   }, []);
 
   useEffect(() => {
     if (errCode === 401) {
-      console.log("status 401", errCode);
-      window.location.replace(`${process.env.NEXT_PUBLIC_STORE_DOMAIN}`);
+      console.log("status 401 - Unauthorized access - Logging out...");
+      clearUserSession();
+      window.location.replace(`${process.env.NEXT_PUBLIC_STORE_DOMAIN || "/"}`);
     }
   }, [errCode]);
 

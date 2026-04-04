@@ -1,6 +1,7 @@
 import { SidebarContext } from "@context/SidebarContext";
 import { useContext, useEffect } from "react";
 import { useRouter } from "next/router";
+import { IoBriefcaseOutline } from "react-icons/io5";
 
 //internal import
 import Layout from "@layout/Layout";
@@ -16,8 +17,10 @@ import MainCarousel from "@components/carousel/MainCarousel";
 import FeatureCategory from "@components/category/FeatureCategory";
 import AttributeServices from "@services/AttributeServices";
 import CMSkeleton from "@components/preloader/CMSkeleton";
+import BusinessCTA from "@components/boutique/BusinessCTA";
+import FeaturedItemsSection from "@components/boutique/FeaturedItemsSection";
 
-const Home = ({ popularProducts, discountProducts, attributes }) => {
+const Home = ({ popularProducts, discountProducts, services, attributes }) => {
   const router = useRouter();
   const { isLoading, setIsLoading } = useContext(SidebarContext);
   const { loading, error, storeCustomizationSetting } = useGetSetting();
@@ -41,21 +44,23 @@ const Home = ({ popularProducts, discountProducts, attributes }) => {
           <div className="min-h-screen">
             <StickyCart />
             <div className="bg-white">
+              {/* Hero — full width */}
               <div className="mx-auto py-5 max-w-screen-2xl px-3 sm:px-10">
-                <div className="flex w-full">
-                  <div className="flex-shrink-0 xl:pr-6 lg:block w-full lg:w-3/5">
-                    <MainCarousel />
-                  </div>
-                  <div className="w-full hidden lg:flex">
-                    <OfferCard />
-                  </div>
-                </div>
-                {storeCustomizationSetting?.home?.promotion_banner_status && (
-                  <div className="bg-orange-100 px-10 py-6 rounded-lg mt-6">
+                <MainCarousel />
+              </div>
+
+              {/* Coupon strip — below hero, compact */}
+              <div className="mx-auto max-w-screen-2xl px-3 sm:px-10 pb-5">
+                <OfferCard />
+              </div>
+
+              {storeCustomizationSetting?.home?.promotion_banner_status && (
+                <div className="mx-auto max-w-screen-2xl px-3 sm:px-10 pb-5">
+                  <div className="bg-orange-100 px-10 py-6 rounded-lg">
                     <Banner />
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
             {/* feature category's */}
@@ -150,6 +155,51 @@ const Home = ({ popularProducts, discountProducts, attributes }) => {
               </div>
             )}
 
+            {/* services section */}
+            {services?.length > 0 && (
+              <div className="bg-indigo-50 lg:py-16 py-10">
+                <div className="mx-auto max-w-screen-2xl px-3 sm:px-10">
+                  <div className="mb-10 flex justify-center">
+                    <div className="text-center w-full lg:w-2/5">
+                      <span className="inline-flex items-center gap-2 mb-3 px-4 py-1.5 rounded-full bg-indigo-100 text-indigo-600 text-sm font-semibold">
+                        <IoBriefcaseOutline size={15} />
+                        Nos Services
+                      </span>
+                      <h2 className="text-xl lg:text-2xl mb-2 font-serif font-semibold text-gray-800">
+                        Des prestations professionnelles
+                      </h2>
+                      <p className="text-base font-sans text-gray-500 leading-6">
+                        Réservez nos services disponibles à domicile, en ligne ou sur site.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 gap-2 md:gap-3 lg:gap-3">
+                    {services.map((service) => (
+                      <ProductCard
+                        key={service._id}
+                        product={service}
+                        attributes={attributes}
+                      />
+                    ))}
+                  </div>
+                  <div className="mt-8 text-center">
+                    <a
+                      href="/services"
+                      className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full border-2 border-indigo-400 text-indigo-600 font-semibold text-sm hover:bg-indigo-500 hover:text-white hover:border-indigo-500 transition-all"
+                    >
+                      Voir tous les services
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Produits & Services en vedette — boutiques partenaires */}
+            <FeaturedItemsSection />
+
+            {/* CTA Business / Boutique */}
+            <BusinessCTA />
+
             {/* promotional banner card */}
             {storeCustomizationSetting?.home?.delivery_status && (
               <div className="block mx-auto max-w-screen-2xl">
@@ -237,23 +287,49 @@ export const getServerSideProps = async (context) => {
   const { cookies } = context.req;
   const { query, _id } = context.query;
 
-  const [data, attributes] = await Promise.all([
-    ProductServices.getShowingStoreProducts({
-      category: _id ? _id : "",
-      title: query ? query : "",
-    }),
+  try {
+    console.log("[SSR] Fetching data for Home page...");
+    const [data, servicesData, attributes] = await Promise.all([
+      ProductServices.getShowingStoreProducts({
+        category: _id ? _id : "",
+        title: query ? query : "",
+      }),
+      ProductServices.getShowingStoreServices().catch(() => ({ products: [] })),
+      AttributeServices.getShowingAttributes(),
+    ]);
+    console.log("[SSR] Data fetched successfully:", {
+      productCount: data?.popularProducts?.length,
+      serviceCount: servicesData?.products?.length,
+      attributeCount: attributes?.length,
+    });
 
-    AttributeServices.getShowingAttributes(),
-  ]);
+    const sortByStock = (arr) => [
+      ...(arr || []).filter((p) => p.stock > 0),
+      ...(arr || []).filter((p) => p.stock <= 0),
+    ];
 
-  return {
-    props: {
-      popularProducts: data.popularProducts,
-      discountProducts: data.discountedProducts,
-      cookies: cookies,
-      attributes,
-    },
-  };
+    return {
+      props: {
+        popularProducts: sortByStock(data.popularProducts),
+        discountProducts: sortByStock(data.discountedProducts),
+        services: servicesData?.products || [],
+        cookies: cookies || null,
+        attributes: attributes || [],
+      },
+    };
+  } catch (error) {
+    console.error("[SSR] Error in getServerSideProps:", error);
+    return {
+      props: {
+        popularProducts: [],
+        discountProducts: [],
+        services: [],
+        cookies: cookies || null,
+        attributes: [],
+        ssrError: error.message
+      },
+    };
+  }
 };
 
 export default Home;

@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { SidebarContext } from "@/context/SidebarContext";
 import spinnerLoadingImage from "@/assets/img/spinner.gif";
 
-const DrawerButton = ({ id, title, isSubmitting }) => {
+const DrawerButton = ({ id, title, isSubmitting, onClick }) => {
   const { t } = useTranslation();
   const { toggleDrawer, isDrawerOpen } = useContext(SidebarContext);
   return (
@@ -37,7 +37,11 @@ const DrawerButton = ({ id, title, isSubmitting }) => {
               <span className="font-serif ml-2 font-light">Processing</span>
             </Button>
           ) : (
-            <Button type="submit" className="w-full h-12">
+            <Button
+              type={onClick ? "button" : "submit"}
+              onClick={onClick}
+              className="w-full h-12"
+            >
               {id ? (
                 <span>
                   {t("UpdateBtn")} {title}

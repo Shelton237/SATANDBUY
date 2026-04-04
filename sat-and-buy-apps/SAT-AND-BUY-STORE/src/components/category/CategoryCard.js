@@ -12,7 +12,7 @@ import {
 import { SidebarContext } from "@context/SidebarContext";
 import useUtilsFunction from "@hooks/useUtilsFunction";
 
-const CategoryCard = ({ title, icon, nested, id }) => {
+const CategoryCard = ({ title, icon, nested, id, slug }) => {
   const router = useRouter();
   const { closeCategoryDrawer, isLoading, setIsLoading } =
     useContext(SidebarContext);
@@ -26,11 +26,12 @@ const CategoryCard = ({ title, icon, nested, id }) => {
   });
 
   // handle show category
-  const showCategory = (id, categoryName) => {
-    const name = categoryName.toLowerCase().replace(/[^A-Z0-9]+/gi, "-");
+  const showCategory = (id, categoryName, categorySlug) => {
+    const name = categorySlug || categoryName.toLowerCase().replace(/[^A-Z0-9]+/gi, "-");
 
     setShow(!show);
-    router.push(`/search?category=${name}&_id=${id}`);
+    // Use slug-based path for the new Nihao-style collection page
+    router.push(`/collection/${name}`);
     closeCategoryDrawer;
     setIsLoading(!isLoading);
   };
@@ -40,15 +41,15 @@ const CategoryCard = ({ title, icon, nested, id }) => {
     const name = categoryName.toLowerCase().replace(/[^A-Z0-9]+/gi, "-");
 
     setShowSubCategory({ id: id, show: showSubCategory.show ? false : true });
-    router.push(`/search?category=${name}&_id=${id}`);
+    router.push(`/collection/${name}`);
     closeCategoryDrawer;
     setIsLoading(!isLoading);
   };
 
-  const handleSubCategory = (id, categoryName) => {
-    const name = categoryName.toLowerCase().replace(/[^A-Z0-9]+/gi, "-");
+  const handleSubCategory = (id, categoryName, categorySlug) => {
+    const name = categorySlug || categoryName.toLowerCase().replace(/[^A-Z0-9]+/gi, "-");
 
-    router.push(`/search?category=${name}&_id=${id}`);
+    router.push(`/collection/${name}`);
     closeCategoryDrawer;
     setIsLoading(!isLoading);
   };
@@ -62,7 +63,7 @@ const CategoryCard = ({ title, icon, nested, id }) => {
   return (
     <>
       <a
-        onClick={() => showCategory(id, title)}
+        onClick={() => showCategory(id, title, slug)}
         className="p-2 flex items-center rounded-md hover:bg-gray-50 w-full hover:text-emerald-600"
         role="button"
       >
@@ -121,7 +122,8 @@ const CategoryCard = ({ title, icon, nested, id }) => {
                   onClick={() =>
                     handleSubCategory(
                       children._id,
-                      showingTranslateValue(children.name)
+                      showingTranslateValue(children.name),
+                      children.slug
                     )
                   }
                   className="flex items-center font-serif py-1 text-sm text-gray-600 hover:text-emerald-600 cursor-pointer"
@@ -143,7 +145,8 @@ const CategoryCard = ({ title, icon, nested, id }) => {
                         onClick={() =>
                           handleSubCategory(
                             subChildren._id,
-                            showingTranslateValue(subChildren?.name)
+                            showingTranslateValue(subChildren?.name),
+                            subChildren.slug
                           )
                         }
                         className="flex items-center font-serif py-1 text-sm text-gray-600 hover:text-emerald-600 cursor-pointer"

@@ -18,5 +18,7 @@ router.post("/signup/:token", controller.signupWithProviderToken);
 router.put("/forget-password", controller.forgetPassword);
 router.put("/reset-password", controller.resetPassword);
 router.post("/change-password", controller.changePassword);
+router.get("/shipping/address/:id", controller.getShippingAddress);
+router.post("/shipping/address/:id", controller.addShippingAddress);
 
 module.exports = router;

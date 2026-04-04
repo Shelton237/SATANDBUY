@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const productController =
   require("@satandbuy/catalog-domain").controllers.product;
-const { isAuth } = require("../middleware/auth");
+const { isAuth, isAuthAny } = require("../middleware/auth");
 
 const {
   addProduct,
@@ -18,18 +18,30 @@ const {
   deleteProduct,
   deleteManyProducts,
   getShowingStoreProducts,
+  getMySubmissions,
+  getBoutiqueStoreProducts,
 } = productController;
 
-//get showing products only (public)
+// ─── PUBLIC ────────────────────────────────────────────────────────────────
+// Produits visibles sur le store
 router.get("/show", getShowingProducts);
-
-//get showing products in store (public)
 router.get("/store", getShowingStoreProducts);
-
-//get a product by slug (public)
+// Produits boutique validés (marketplace)
+router.get("/store/boutique", getBoutiqueStoreProducts);
+// Produit par slug
 router.get("/product/:slug", getProductBySlug);
 
-// Protected routes for admin console / vendors
+// ─── BOUTIQUE OWNER (client JWT) ───────────────────────────────────────────
+// Soumettre un produit au store
+router.post("/submit", isAuthAny, addProduct);
+// Voir ses propres soumissions
+router.get("/my-submissions", isAuthAny, getMySubmissions);
+// Modifier un produit soumis (repasse à pending automatiquement)
+router.put("/my-submissions/:id", isAuthAny, updateProduct);
+// Supprimer un produit soumis
+router.delete("/my-submissions/:id", isAuthAny, deleteProduct);
+
+// ─── ADMIN / STAFF ─────────────────────────────────────────────────────────
 router.post("/add", isAuth, addProduct);
 router.post("/all", isAuth, addAllProducts);
 router.post("/:id", isAuth, getProductById);

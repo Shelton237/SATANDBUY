@@ -1,14 +1,11 @@
 import Image from "next/image";
 import { useCart } from "react-use-cart";
 import { FiPlus, FiMinus } from "react-icons/fi";
-import SettingServices from "@services/SettingServices";
-import useAsync from "@hooks/useAsync";
+import useUtilsFunction from "@hooks/useUtilsFunction";
 
 const CheckoutCard = ({ item }) => {
   const { updateItemQuantity } = useCart();
-  const { data: globalSetting } = useAsync(SettingServices.getGlobalSetting);
-
-  const currency = globalSetting?.default_currency || "FCFA";
+  const { currency, getNumberTwo } = useUtilsFunction();
 
   return (
     <div
@@ -25,8 +22,7 @@ const CheckoutCard = ({ item }) => {
               {item?.title?.substring(0, 5)}
             </span>
             <span className="text-xs text-gray-400 mb-2">
-              Item Price{currency}
-              {item.price}
+              {getNumberTwo(item.price)} {currency}
             </span>
           </p>
           <div className="h-8 w-20 flex flex-wrap items-center justify-evenly p-1 border border-gray-100 bg-white text-gray-600 rounded-md">
@@ -52,7 +48,7 @@ const CheckoutCard = ({ item }) => {
           </div>
 
           <div className="font-bold text-sm text-heading leading-5">
-            <span>${(item.price * item.quantity).toFixed(2)}</span>
+            <span>{getNumberTwo(item.price * item.quantity)} {currency}</span>
           </div>
         </div>
       </div>

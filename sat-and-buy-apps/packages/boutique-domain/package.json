@@ -1,0 +1,14 @@
+{
+  "name": "@satandbuy/boutique-domain",
+  "version": "0.1.0",
+  "description": "Domain package pour la fonctionnalité Boutique (entreprises) de Sat & Buy",
+  "main": "src/index.js",
+  "scripts": {
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@satandbuy/shared": "file:../shared",
+    "http-errors": "^2.0.0",
+    "mongoose": "^7.0.0"
+  }
+}

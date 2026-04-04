@@ -13,7 +13,7 @@ const Cart = () => {
   const router = useRouter();
   const { isEmpty, items, cartTotal } = useCart();
   const { closeCartDrawer } = useContext(SidebarContext);
-  const { currency } = useUtilsFunction();
+  const { currency, getNumberTwo } = useUtilsFunction();
   const userInfo = getUserSession();
 
   // console.log("userInfo", userInfo);
@@ -88,8 +88,7 @@ const Cart = () => {
               Proceed To Checkout
             </span>
             <span className="rounded-lg font-bold py-2 px-3 bg-white text-emerald-600">
-              {currency}
-              {cartTotal.toFixed(2)}
+              {getNumberTwo(cartTotal)} {currency}
             </span>
           </button>
         </div>

@@ -1,7 +1,7 @@
 services:
   mongo:
     image: mongo:6.0
-    restart: unless-stopped
+    restart: always
     ports:
       - "127.0.0.1:27017:27017"
     volumes:
@@ -13,7 +13,7 @@ services:
 
   catalog-mongo:
     image: mongo:6.0
-    restart: unless-stopped
+    restart: always
     ports:
       - "127.0.0.1:27018:27017"
     volumes:
@@ -25,7 +25,7 @@ services:
 
   nats:
     image: nats:2.10
-    restart: unless-stopped
+    restart: always
     ports:
       - "127.0.0.1:4222:4222"
     networks:
@@ -35,7 +35,7 @@ services:
     build:
       context: .
       dockerfile: services/catalog-service/Dockerfile
-    restart: unless-stopped
+    restart: always
     env_file:
       - env/catalog-service.prod.env
     depends_on:
@@ -50,7 +50,7 @@ services:
     build:
       context: .
       dockerfile: services/order-service/Dockerfile
-    restart: unless-stopped
+    restart: always
     env_file:
       - env/order-service.prod.env
     depends_on:
@@ -65,7 +65,7 @@ services:
     build:
       context: .
       dockerfile: services/auth-service/Dockerfile
-    restart: unless-stopped
+    restart: always
     env_file:
       - env/auth-service.prod.env
     depends_on:
@@ -80,7 +80,7 @@ services:
     build:
       context: .
       dockerfile: services/settings-service/Dockerfile
-    restart: unless-stopped
+    restart: always
     env_file:
       - env/settings-service.prod.env
     depends_on:
@@ -94,7 +94,7 @@ services:
     build:
       context: .
       dockerfile: services/notification-service/Dockerfile
-    restart: unless-stopped
+    restart: always
     env_file:
       - env/notification-service.prod.env
     depends_on:
@@ -109,7 +109,7 @@ services:
     build:
       context: .
       dockerfile: services/delivery-service/Dockerfile
-    restart: unless-stopped
+    restart: always
     env_file:
       - env/delivery-service.prod.env
     depends_on:
@@ -120,17 +120,34 @@ services:
     networks:
       - satandbuy
 
+  boutique-service:
+    build:
+      context: .
+      dockerfile: services/boutique-service/Dockerfile
+    restart: always
+    env_file:
+      - env/boutique-service.prod.env
+    depends_on:
+      - mongo
+    ports:
+      - "127.0.0.1:5600:5600"
+    volumes:
+      - boutique-uploads:/uploads
+    networks:
+      - satandbuy
+
   api-gateway:
     build:
       context: .
       dockerfile: services/api-gateway/Dockerfile
-    restart: unless-stopped
+    restart: always
     env_file:
       - env/api-gateway.prod.env
     depends_on:
       - auth-service
       - catalog-service
       - order-service
+      - boutique-service
     ports:
       - "0.0.0.0:5055:5055"
     networks:
@@ -139,15 +156,15 @@ services:
   console:
     build:
       context: ./SAT-AND-BUY-CONSOLE
-    restart: unless-stopped
+    restart: always
     env_file:
       - env/console.prod.env
     ports:
       - "127.0.0.1:4000:4000"
     extra_hosts:
-      - "console.dreamdigital.cm:38.242.216.23"
-      - "back-satbuy.dreamdigital.cm:38.242.216.23"
-      - "satandbuy.dreamdigital.cm:38.242.216.23"
+      - "console.diginova.cm:38.242.223.70"
+      - "gateway.diginova.cm:38.242.223.70"
+      - "store.diginova.cm:38.242.223.70"
     networks:
       - satandbuy
 
@@ -155,19 +172,19 @@ services:
     build:
       context: ./SAT-AND-BUY-STORE
       args:
-        NEXT_PUBLIC_API_BASE_URL: ${STORE_BUILD_API_BASE_URL:-https://back-satbuy.dreamdigital.cm/api}
-        NEXT_PUBLIC_API_SOCKET_URL: ${STORE_BUILD_API_SOCKET_URL:-https://back-satbuy.dreamdigital.cm}
-        NEXT_PUBLIC_STORE_DOMAIN: ${STORE_BUILD_STORE_DOMAIN:-https://store.dreamdigital.cm}
-        NEXTAUTH_URL: ${STORE_BUILD_NEXTAUTH_URL:-https://store.dreamdigital.cm}
-    restart: unless-stopped
+        NEXT_PUBLIC_API_BASE_URL: ${STORE_BUILD_API_BASE_URL:-https://gateway.diginova.cm/api}
+        NEXT_PUBLIC_API_SOCKET_URL: ${STORE_BUILD_API_SOCKET_URL:-https://gateway.diginova.cm}
+        NEXT_PUBLIC_STORE_DOMAIN: ${STORE_BUILD_STORE_DOMAIN:-https://store.diginova.cm}
+        NEXTAUTH_URL: ${STORE_BUILD_NEXTAUTH_URL:-https://store.diginova.cm}
+    restart: always
     env_file:
       - env/store.prod.env
     ports:
       - "127.0.0.1:3000:3000"
     extra_hosts:
-      - "console.dreamdigital.cm:38.242.216.23"
-      - "back-satbuy.dreamdigital.cm:38.242.216.23"
-      - "satandbuy.dreamdigital.cm:38.242.216.23"
+      - "console.diginova.cm:38.242.223.70"
+      - "gateway.diginova.cm:38.242.223.70"
+      - "store.diginova.cm:38.242.223.70"
     networks:
       - satandbuy
 
@@ -178,3 +195,4 @@ networks:
 volumes:
   mongo-data:
   mongo-catalog-data:
+  boutique-uploads:

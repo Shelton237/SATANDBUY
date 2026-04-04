@@ -12,16 +12,25 @@ const createInstance = (baseURL) =>
 
 const transformUrl = (url) => {
   if (!url) return url;
-  if (process.env.USE_DOCKER_NETWORK === "true" && typeof window === "undefined") {
-    return url
-      .replace("localhost:5055", "api-gateway:5055")
-      .replace("127.0.0.1:5055", "api-gateway:5055")
-      .replace("localhost:5100", "catalog-service:5100")
-      .replace("127.0.0.1:5100", "catalog-service:5100")
-      .replace("localhost:6001", "auth-service:6001")
-      .replace("127.0.0.1:6001", "auth-service:6001")
-      .replace("localhost:5200", "order-service:5200")
-      .replace("127.0.0.1:5200", "order-service:5200");
+  
+  const useDocker = process.env.USE_DOCKER_NETWORK === "true";
+  const isServer = typeof window === "undefined";
+
+  if (useDocker && isServer) {
+    console.log("[SSR] Transforming URL before:", url);
+    const newUrl = url
+      .replace(/^https:\/\//, "http://")
+      .replace(/localhost:5055/g, "api-gateway:5055")
+      .replace(/127\.0\.0\.1:5055/g, "api-gateway:5055")
+      .replace(/gateway\.diginova\.cm\/api/g, "api-gateway:5055/api")
+      .replace(/localhost:5100/g, "catalog-service:5100")
+      .replace(/127\.0\.0\.1:5100/g, "catalog-service:5100")
+      .replace(/localhost:6001/g, "auth-service:6001")
+      .replace(/127\.0\.0\.1:6001/g, "auth-service:6001")
+      .replace(/localhost:5200/g, "order-service:5200")
+      .replace(/127\.0\.0\.1:5200/g, "order-service:5200");
+    console.log("[SSR] Transformed URL after:", newUrl);
+    return newUrl;
   }
   return url;
 };
@@ -57,7 +66,14 @@ const buildRequests = (instance) => ({
   get: (url, body) => instance.get(url, body).then(responseBody),
   post: (url, body, headers) =>
     instance.post(url, body, headers).then(responseBody),
+  // Pour les uploads multipart : supprime Content-Type afin que le navigateur
+  // injecte automatiquement "multipart/form-data; boundary=..."
+  postForm: (url, formData) =>
+    instance
+      .post(url, formData, { headers: { "Content-Type": undefined } })
+      .then(responseBody),
   put: (url, body) => instance.put(url, body).then(responseBody),
+  delete: (url) => instance.delete(url).then(responseBody),
 });
 
 const requests = buildRequests(apiInstance);

@@ -28,6 +28,9 @@ const StoreSetting = lazy(() => import("@/pages/StoreSetting"));
 const Notifications = lazy(() => import("@/pages/Notifications"));
 const ShippingRates = lazy(() => import("@/pages/ShippingRates"));
 const MarketListRequests = lazy(() => import("@/pages/MarketListRequests"));
+const Boutiques = lazy(() => import("@/pages/Boutiques"));
+const BoutiqueCatalog = lazy(() => import("@/pages/BoutiqueCatalog"));
+const PendingProducts = lazy(() => import("@/pages/PendingProducts"));
 /*
 //  * ⚠ These are internal routes!
 //  * They will be rendered inside the app, using the default `containers/Layout`.
@@ -124,14 +127,30 @@ const routes = [
     allowedRoles: ADMIN_ONLY,
   },
   {
+    path: "/boutiques",
+    component: Boutiques,
+    allowedRoles: ADMIN_ONLY,
+  },
+  {
+    path: "/boutique-catalog",
+    component: BoutiqueCatalog,
+    allowedRoles: ADMIN_ONLY,
+  },
+  {
+    path: "/pending-products",
+    component: PendingProducts,
+    allowedRoles: ADMIN_ONLY,
+  },
+  {
     path: "/order/:id",
     component: OrderInvoice,
     allowedRoles: ORDER_ROLES,
   },
-  // {
-  //   path: "/coupons",
-  //   component: Coupons,
-  // },
+  {
+    path: "/coupons",
+    component: Coupons,
+    allowedRoles: ADMIN_ONLY,
+  },
   { path: "/settings", component: Setting, allowedRoles: ADMIN_ONLY },
   {
     path: "/store/customization",

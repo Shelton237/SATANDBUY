@@ -24,7 +24,7 @@ const mapAdminPayload = (data = {}) => {
 class AuthService {
   static async login(email, password) {
     const { data } = await authHttp.post("/admin/login", { email, password });
-    const user = mapAdminPayload(data);
+    const user = mapAdminPayload(data.user);
     if (!isRoleAllowed(user.role)) {
       throw new Error(
         "Ce compte n'est pas autorise a acceder a la console. Connectez-vous sur la boutique."

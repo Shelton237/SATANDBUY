@@ -32,7 +32,8 @@ const useSignupSubmit = () => {
       persistUserSession(user);
       dispatch({ type: "USER_LOGIN", payload: user });
       notifySuccess("Compte créé ! Bienvenue sur Sat&Buy.");
-      router.push("/user/dashboard");
+      const { redirectUrl } = router.query;
+      router.push(redirectUrl ? decodeURIComponent(redirectUrl) : "/user/dashboard");
     } catch (err) {
       notifyError(err?.response?.data?.message || err?.message);
     } finally {

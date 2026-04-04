@@ -10,6 +10,10 @@ const APPROVAL_STATUSES = ["pending", "approved", "rejected"];
 const isVendorUser = (user) =>
   user?.role?.toLowerCase && user.role.toLowerCase() === "vendeur";
 
+// Boutique owner = client (customer JWT) avec role "Client"
+const isBoutiqueOwnerUser = (user) =>
+  user?.role?.toLowerCase && user.role.toLowerCase() === "client";
+
 const resolveOwnerFromRequest = (req) => {
   if (isVendorUser(req.user)) {
     return req.user._id;
@@ -20,6 +24,9 @@ const resolveOwnerFromRequest = (req) => {
 const applyOwnerConstraint = (query = {}, user, explicitOwner) => {
   if (isVendorUser(user)) {
     return { ...query, owner: user._id };
+  }
+  if (isBoutiqueOwnerUser(user)) {
+    return { ...query, submittedBy: user._id };
   }
   if (explicitOwner) {
     return { ...query, owner: explicitOwner };
@@ -141,14 +148,21 @@ const addProduct = async (req, res) => {
       payload.stock = 0;
     }
 
+    const forcePending = isVendorUser(req.user) || isBoutiqueOwnerUser(req.user);
     const approvalSnapshot = buildApprovalSnapshot({
       status: req.body.approvalStatus,
       actor: req.user,
-      forcePending: isVendorUser(req.user),
+      forcePending,
     });
     payload.approvalStatus = approvalSnapshot.approvalStatus;
     payload.approvedAt = approvalSnapshot.approvedAt;
     payload.approvedBy = approvalSnapshot.approvedBy;
+
+    // Champs spécifiques boutique owner
+    if (isBoutiqueOwnerUser(req.user)) {
+      payload.submittedBy = req.user._id;
+      if (req.body.boutiqueId) payload.boutiqueId = req.body.boutiqueId;
+    }
 
     if (approvalSnapshot.approvalStatus !== "approved") {
       payload.status = "hide";
@@ -369,7 +383,7 @@ const updateProduct = async (req, res) => {
       product.serviceDetails =
         nextType === "service" ? nextServiceDetails : undefined;
 
-      if (isVendorUser(req.user)) {
+      if (isVendorUser(req.user) || isBoutiqueOwnerUser(req.user)) {
         const snapshot = buildApprovalSnapshot({ forcePending: true });
         product.approvalStatus = snapshot.approvalStatus;
         product.approvedAt = snapshot.approvedAt;
@@ -590,21 +604,23 @@ const deleteProduct = async (req, res) => {
   }
 };
 
+
 const getShowingStoreProducts = async (req, res) => {
   // console.log("req.body", req);
   try {
     const baseFilter = { status: "show", approvalStatus: "approved" };
     const queryObject = { ...baseFilter };
 
-    const { category, title, slug } = req.query;
-    // console.log("title", title);
-
-    // console.log("query", req);
+    const { category, title, slug, type } = req.query;
 
     if (category) {
       queryObject.categories = {
         $in: [category],
       };
+    }
+
+    if (type) {
+      queryObject.type = type;
     }
 
     if (title) {
@@ -634,7 +650,7 @@ const getShowingStoreProducts = async (req, res) => {
           category: products[0]?.category,
         }).populate({ path: "category", select: "_id name" });
       }
-    } else if (title || category) {
+    } else if (title || category || type) {
       products = await Product.find(queryObject)
         .populate({ path: "category", select: "name _id" })
         .sort({ _id: -1 })
@@ -725,6 +741,63 @@ const deleteManyProducts = async (req, res) => {
   }
 };
 
+// GET /products/my-submissions — boutique owner voit ses propres soumissions
+const getMySubmissions = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, approvalStatus } = req.query;
+    const pages = Number(page);
+    const limits = Number(limit);
+    const skip = (pages - 1) * limits;
+
+    const query = { submittedBy: req.user._id };
+    if (approvalStatus) query.approvalStatus = approvalStatus;
+
+    const [products, totalDoc] = await Promise.all([
+      Product.find(query)
+        .populate({ path: "category", select: "_id name" })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limits),
+      Product.countDocuments(query),
+    ]);
+
+    res.send({ products, totalDoc, pages, limits });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+};
+
+// GET /products/store/boutique — produits boutique approuvés (public)
+const getBoutiqueStoreProducts = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, type, boutiqueId } = req.query;
+    const pages = Number(page);
+    const limits = Number(limit);
+    const skip = (pages - 1) * limits;
+
+    const query = {
+      status: "show",
+      approvalStatus: "approved",
+      boutiqueId: { $ne: null, $exists: true },
+    };
+    if (type) query.type = type;
+    if (boutiqueId) query.boutiqueId = boutiqueId;
+
+    const [products, totalDoc] = await Promise.all([
+      Product.find(query)
+        .populate({ path: "category", select: "_id name" })
+        .sort({ approvedAt: -1 })
+        .skip(skip)
+        .limit(limits),
+      Product.countDocuments(query),
+    ]);
+
+    res.send({ products, totalDoc, pages, limits });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+};
+
 module.exports = {
   addProduct,
   addAllProducts,
@@ -739,4 +812,6 @@ module.exports = {
   deleteProduct,
   deleteManyProducts,
   getShowingStoreProducts,
+  getMySubmissions,
+  getBoutiqueStoreProducts,
 };

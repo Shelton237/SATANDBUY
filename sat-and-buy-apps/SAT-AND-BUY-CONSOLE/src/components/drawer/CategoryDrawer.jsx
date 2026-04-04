@@ -12,7 +12,7 @@ import LabelArea from "@/components/form/selectOption/LabelArea";
 import SwitchToggle from "@/components/form/switch/SwitchToggle";
 import DrawerButton from "@/components/form/button/DrawerButton";
 import Loading from "@/components/preloader/Loading";
-import { Select } from "@windmill/react-ui";
+import Uploader from "@/components/image-uploader/Uploader";
 
 // Hooks & Services
 import useCategorySubmit from "@/hooks/useCategorySubmit";
@@ -103,22 +103,9 @@ const CategoryDrawer = ({ id, data, onClose, refetch }) => {
   }, [setPublished, setStatus]);
 
   const handleFormSubmission = useCallback(async () => {
-    try {
-      const payload = {
-        name: translations.name,
-        type: translations.type,
-        status,
-        icon: imageUrl,
-        ...(checked && { parentId: Number(checked) }),
-      };
-
-      await onSubmit(payload);
-      refetch?.();
-      onClose?.();
-    } catch (error) {
-      notifyError(error.message);
-    }
-  }, [translations, status, imageUrl, checked, onSubmit, id, t, refetch, onClose]);
+    await onSubmit();
+    refetch?.();
+  }, [onSubmit, refetch]);
 
   const flattenTreeData = (treeNodes) => {
     let result = [];
@@ -197,31 +184,19 @@ const CategoryDrawer = ({ id, data, onClose, refetch }) => {
   useEffect(() => {
     if (id && data) {
       const category = data.find(cat => cat.id === id);
-      if (category) {
-        setStatus(category.status || "ACTIVE");
-        setPublished(category.status === "ACTIVE");
-        setImageUrl(category.icon || "");
-
-        if (category.parentId) {
-          const parentKey = category.parentId?.toString();
-          setChecked(parentKey);
-          const parent = findCategory(data[0], parentKey);
-          setSelectCategoryName(
-            parent ? showingTranslateValue(parent?.name) : t("RootCategory")
-          );
-        }
-        else {
-          setChecked(null);
-          setSelectCategoryName(t("RootCategory"));
-        }
+      if (category?.parentId) {
+        const parentKey = category.parentId?.toString();
+        const parent = data.find(cat => cat.id === parentKey);
+        setSelectCategoryName(
+          parent ? showingTranslateValue(parent?.name) : t("RootCategory")
+        );
+      } else {
+        setSelectCategoryName(id ? t("RootCategory") : "");
       }
     }
-    else {
-      resetForm();
-    }
-  }, [id, data, setChecked, setSelectCategoryName, setStatus, setPublished]);
+  }, [id, data]);
 
-  console.log("Selected parent name:", selectCategoryName);
+
   if (!data) return <Loading />;
 
   return (
@@ -234,7 +209,7 @@ const CategoryDrawer = ({ id, data, onClose, refetch }) => {
       </div>
 
       <Scrollbars className="w-full md:w-7/12 lg:w-8/12 xl:w-8/12 relative dark:bg-gray-700 dark:text-gray-200">
-        <form onSubmit={handleSubmit(handleFormSubmission)}>
+        <form onSubmit={(e) => e.preventDefault()}>
           <div className="p-6 flex-grow scrollbar-hide w-full max-h-full pb-40">
             {/* Language Selection */}
             <div className="grid grid-cols-6 gap-3 mb-6">
@@ -336,27 +311,8 @@ const CategoryDrawer = ({ id, data, onClose, refetch }) => {
             {/* Icon Selector */}
             <div className="grid grid-cols-6 gap-3 mb-6">
               <LabelArea label={t("Icon")} />
-              <div className="col-span-8 sm:col-span-4 flex items-center gap-3">
-                <Select
-                  className="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200"
-                  value={imageUrl || ""}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                >
-                  <option value="">{t("SelectIcon")}</option>
-                  <option value="fa-boxes">{t("Boxes")} (fa-boxes)</option>
-                  <option value="fa-shopping-cart">{t("Cart")} (fa-shopping-cart)</option>
-                  <option value="fa-tags">{t("Tags")} (fa-tags)</option>
-                  <option value="fa-list">{t("List")} (fa-list)</option>
-                  <option value="fa-layer-group">{t("Layers")} (fa-layer-group)</option>
-                  <option value="fa-folder">{t("Folder")} (fa-folder)</option>
-                  <option value="fa-cube">{t("Cube")} (fa-cube)</option>
-                  <option value="fa-archive">{t("Archive")} (fa-archive)</option>
-                </Select>
-                {imageUrl && (
-                  <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-green-500">
-                    <i className={`fas ${imageUrl} text-white text-lg`} />
-                  </span>
-                )}
+              <div className="col-span-8 sm:col-span-4 w-full">
+                <Uploader imageUrl={imageUrl} setImageUrl={setImageUrl} folder="category" />
               </div>
             </div>
 
@@ -381,6 +337,7 @@ const CategoryDrawer = ({ id, data, onClose, refetch }) => {
             isSubmitting={isSubmitting}
             onClose={onClose}
             onReset={resetForm}
+            onClick={handleSubmit(handleFormSubmission)}
           />
         </form>
       </Scrollbars>

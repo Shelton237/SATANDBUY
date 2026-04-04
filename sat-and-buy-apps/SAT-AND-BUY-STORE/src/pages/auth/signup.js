@@ -1,4 +1,6 @@
 import { FiLock, FiMail, FiUser } from "react-icons/fi";
+import { useRouter } from "next/router";
+import { useContext, useEffect } from "react";
 
 //internal import
 import Layout from "@layout/Layout";
@@ -6,10 +8,23 @@ import Error from "@components/form/Error";
 import InputArea from "@components/form/InputArea";
 import BottomNavigation from "@components/login/BottomNavigation";
 import useSignupSubmit from "@hooks/useSignupSubmit";
+import { UserContext } from "@context/UserContext";
 
 const SignUp = () => {
+  const router = useRouter();
+  const { redirectUrl } = router.query;
+  const { state } = useContext(UserContext);
+  const { userInfo } = state;
+
   const { handleSubmit, submitHandler, register, errors, loading } =
     useSignupSubmit();
+
+  useEffect(() => {
+    if (userInfo?.token) {
+      const url = redirectUrl ? decodeURIComponent(redirectUrl) : "/user/dashboard";
+      router.replace(url);
+    }
+  }, [userInfo, router, redirectUrl]);
 
   return (
     <Layout title="Signup" description="this is sign up page">

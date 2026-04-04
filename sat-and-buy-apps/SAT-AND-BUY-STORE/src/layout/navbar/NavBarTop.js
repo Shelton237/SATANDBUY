@@ -41,7 +41,14 @@ const NavBarTop = () => {
 
   useEffect(() => {
     if (userInfo) {
-      const decoded = jwtDecode(userInfo?.token);
+      if (!userInfo?.token) { handleLogOut(); return; }
+      let decoded;
+      try {
+        decoded = jwtDecode(userInfo.token);
+      } catch (err) {
+        handleLogOut();
+        return;
+      }
 
       const expireTime = new Date(decoded?.exp * 1000);
       const currentTime = new Date();

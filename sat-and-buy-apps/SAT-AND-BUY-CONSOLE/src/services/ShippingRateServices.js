@@ -1,4 +1,4 @@
-import { orderHttp as http } from "@/services/httpClients";
+import { apiHttp as http } from "@/services/httpClients";
 import { withToken } from "@/utils/tokenHelper";
 
 const buildQuery = (params = {}) => {

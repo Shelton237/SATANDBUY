@@ -82,7 +82,7 @@ const updateCoupon = async (req, res) => {
       // coupon.title[req.body.lang] = req.body.title;
       // coupon.title = req.body.title;
       coupon.couponCode = req.body.couponCode;
-      coupon.endTime = dayjs().utc().format(req.body.endTime);
+      coupon.endTime = new Date(req.body.endTime);
       // coupon.discountPercentage = req.body.discountPercentage;
       coupon.minimumAmount = req.body.minimumAmount;
       coupon.productType = req.body.productType;

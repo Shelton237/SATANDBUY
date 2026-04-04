@@ -9,6 +9,7 @@ import {
   FiTarget,
   FiTruck,
   FiClipboard,
+  FiBriefcase,
 } from "react-icons/fi";
 import { STAFF_ROLE_VALUES } from "@/constants/roles";
 
@@ -53,10 +54,11 @@ const sidebar = [
         name: "Attributes",
         allowedRoles: CATALOG_ROLES,
       },
-      // {
-      //   path: "/coupons",
-      //   name: "Coupons",
-      // },
+      {
+        path: "/coupons",
+        name: "Coupons",
+        allowedRoles: ADMIN_ONLY,
+      },
     ],
   },
 
@@ -83,6 +85,28 @@ const sidebar = [
     icon: FiClipboard,
     name: "MarketRequests",
     allowedRoles: ADMIN_ONLY,
+  },
+  {
+    icon: FiBriefcase,
+    name: "Boutiques",
+    allowedRoles: ADMIN_ONLY,
+    routes: [
+      {
+        path: "/boutiques",
+        name: "Entreprises",
+        allowedRoles: ADMIN_ONLY,
+      },
+      {
+        path: "/boutique-catalog",
+        name: "Catalogue",
+        allowedRoles: ADMIN_ONLY,
+      },
+      {
+        path: "/pending-products",
+        name: "PendingProducts",
+        allowedRoles: ADMIN_ONLY,
+      },
+    ],
   },
 
   {

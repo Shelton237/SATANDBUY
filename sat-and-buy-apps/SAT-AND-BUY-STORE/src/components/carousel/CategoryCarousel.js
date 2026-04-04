@@ -25,11 +25,11 @@ const CategoryCarousel = () => {
   const { data, error } = useAsync(() => CategoryServices.getShowingCategory());
 
   const handleCategoryClick = (id, category) => {
-    const category_name = showingTranslateValue(category)
+    const category_slug = showingTranslateValue(category)
       ?.toLowerCase()
       .replace(/[^A-Z0-9]+/gi, "-");
 
-    router.push(`/search?category=${category_name}&_id=${id}`);
+    router.push(`/collection/${category_slug}`);
     setIsLoading(!isLoading);
   };
 

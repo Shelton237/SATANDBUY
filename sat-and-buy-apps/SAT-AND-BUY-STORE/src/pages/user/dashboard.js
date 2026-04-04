@@ -2,7 +2,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { useContext, useEffect, useState } from "react";
-import { IoLockOpenOutline } from "react-icons/io5";
+import { IoLockOpenOutline, IoBriefcaseOutline } from "react-icons/io5";
 import {
   FiCheck,
   FiClipboard,
@@ -29,11 +29,12 @@ import Cookies from "js-cookie";
 import Loading from "@components/preloader/Loading";
 import useGetSetting from "@hooks/useGetSetting";
 import useUtilsFunction from "@hooks/useUtilsFunction";
+import BoutiqueServices from "@services/BoutiqueServices";
 
 const Dashboard = ({ title, description, children }) => {
   const router = useRouter();
   const { isLoading, setIsLoading, currentPage } = useContext(SidebarContext);
-  const { dispatch } = useContext(UserContext);
+  const { dispatch, state } = useContext(UserContext);
 
   const { storeCustomizationSetting } = useGetSetting();
   const { showingTranslateValue } = useUtilsFunction();
@@ -41,6 +42,7 @@ const Dashboard = ({ title, description, children }) => {
   const [data, setData] = useState({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [hasBoutique, setHasBoutique] = useState(false);
 
   useEffect(() => {
     let isMounted = true; // Track if the component is mounted
@@ -89,6 +91,14 @@ const Dashboard = ({ title, description, children }) => {
   useEffect(() => {
     setIsLoading(false);
   }, []);
+
+  useEffect(() => {
+    if (state?.userInfo) {
+      BoutiqueServices.getMyBoutique()
+        .then(() => setHasBoutique(true))
+        .catch(() => setHasBoutique(false));
+    }
+  }, [state?.userInfo]);
 
   const userSidebar = [
     {
@@ -139,6 +149,9 @@ const Dashboard = ({ title, description, children }) => {
       href: "/user/change-password",
       icon: FiFileText,
     },
+    ...(hasBoutique
+      ? [{ title: "Mon Entreprise", href: "/user/boutique", icon: IoBriefcaseOutline }]
+      : []),
   ];
 
   return (

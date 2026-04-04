@@ -87,7 +87,7 @@ const createGatewayApp = (config) => {
         route,
         buildProxy(config.catalogUrl, {
           logLevel: config.logLevel,
-          pathRewrite: rewriteOriginalPath,
+          pathRewrite: rewritePrefix(new RegExp(`^${route}`), route),
         })
       );
     });
@@ -112,7 +112,7 @@ const createGatewayApp = (config) => {
       "/api/shipping-rate",
       buildProxy(config.orderUrl, {
         logLevel: config.logLevel,
-        pathRewrite: rewriteOriginalPath,
+        pathRewrite: rewritePrefix(/^\/api\/shipping-rate/, "/api/shipping-rate"),
       })
     );
   }
@@ -144,6 +144,20 @@ const createGatewayApp = (config) => {
         logLevel: config.logLevel,
         pathRewrite: rewriteOriginalPath,
       })
+    );
+  }
+
+  if (config.boutiqueUrl) {
+    ["/api/boutiques", "/api/boutique-posts", "/api/boutique-comments", "/api/boutique-catalog", "/api/boutique-orders"].forEach(
+      (route) => {
+        app.use(
+          route,
+          buildProxy(config.boutiqueUrl, {
+            logLevel: config.logLevel,
+            pathRewrite: rewriteOriginalPath,
+          })
+        );
+      }
     );
   }
 

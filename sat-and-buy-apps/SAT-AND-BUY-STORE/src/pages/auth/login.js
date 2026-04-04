@@ -1,4 +1,6 @@
 import { FiLock, FiMail } from "react-icons/fi";
+import { useRouter } from "next/router";
+import { useContext, useEffect } from "react";
 
 //internal  import
 import Layout from "@layout/Layout";
@@ -6,10 +8,23 @@ import Error from "@components/form/Error";
 import useLoginSubmit from "@hooks/useLoginSubmit";
 import InputArea from "@components/form/InputArea";
 import BottomNavigation from "@components/login/BottomNavigation";
+import { UserContext } from "@context/UserContext";
 
 const Login = () => {
+  const router = useRouter();
+  const { state } = useContext(UserContext);
+  const { userInfo } = state;
+  const { redirectUrl } = router.query;
+
   const { handleSubmit, submitHandler, register, errors, loading } =
     useLoginSubmit();
+
+  useEffect(() => {
+    if (userInfo?.token) {
+      const url = redirectUrl ? decodeURIComponent(redirectUrl) : "/user/dashboard";
+      router.replace(url);
+    }
+  }, [userInfo, router, redirectUrl]);
 
   return (
     <Layout title="Login" description="This is login page">
@@ -32,7 +47,6 @@ const Login = () => {
                     <div className="form-group">
                       <InputArea
                         register={register}
-                        defaultValue="justin@gmail.com"
                         label="Email"
                         name="email"
                         type="email"
@@ -45,7 +59,6 @@ const Login = () => {
                     <div className="form-group">
                       <InputArea
                         register={register}
-                        defaultValue="12345678"
                         label="Password"
                         name="password"
                         type="password"
@@ -57,16 +70,6 @@ const Login = () => {
                       <Error errorName={errors.password} />
                     </div>
 
-                    {/* <div className="flex items-center justify-between">
-                      <div className="flex ms-auto">
-                        <Link
-                          href="/auth/forget-password"
-                          className="text-end text-sm text-heading ps-3 underline hover:no-underline focus:outline-none"
-                        >
-                          Forgot password?
-                        </Link>
-                      </div>
-                    </div> */}
                     {loading ? (
                       <button
                         disabled={loading}
@@ -96,7 +99,7 @@ const Login = () => {
                 </form>
                 <BottomNavigation
                   or={true}
-                  route={"/auth/signup"}
+                  route={redirectUrl ? `/auth/signup?redirectUrl=${redirectUrl}` : "/auth/signup"}
                   pageName={"Sign Up"}
                 />
               </div>

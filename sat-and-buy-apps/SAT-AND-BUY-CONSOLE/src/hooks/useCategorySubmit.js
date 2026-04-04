@@ -82,16 +82,19 @@ const useCategorySubmit = (id, data) => {
 
   const verifyForm = () => {
     if (!translations?.name?.fr || !translations?.name?.en) {
+      console.warn("Category update blocked: translations.name is missing", translations.name);
       notifyError(t("CategoryNameRequired"));
       return false;
     }
 
     if (!translations?.type?.fr || !translations?.type?.en) {
+      console.warn("Category update blocked: translations.type is missing", translations.type);
       notifyError(t("CategoryTypeRequired"));
       return false;
     }
 
     if (!imageUrl) {
+      console.warn("Category update blocked: icon is missing");
       notifyError(t("CategoryIconRequired"));
       return false;
     }

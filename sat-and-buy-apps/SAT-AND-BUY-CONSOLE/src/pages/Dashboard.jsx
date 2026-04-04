@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import {
   FiCheck,
+  FiCompass,
   FiRefreshCw,
   FiShoppingCart,
   FiTruck,
@@ -60,6 +61,8 @@ const Dashboard = () => {
   const { currentPage, handleChangePage } = useContext(SidebarContext);
   const currentRole = authData?.user?.role || authData?.role || "Admin";
   const isVendor = currentRole === "Vendeur";
+  const isLivreur = currentRole === "Livreur";
+  const isTrieur = currentRole === "Trieur";
 
   // react hook
   const [todayOrderAmount, setTodayOrderAmount] = useState(0);
@@ -72,35 +75,37 @@ const Dashboard = () => {
   const [yesterdayCardPayment, setYesterdayCardPayment] = useState(0);
   const [yesterdayCreditPayment, setYesterdayCreditPayment] = useState(0);
 
+  const skipFullDashboard = isVendor || isLivreur || isTrieur;
+
   const {
     data: bestSellerProductChart,
     loading: loadingBestSellerProduct,
     error,
   } = useAsync(
-    isVendor ? noopFetcher : OrderServices.getBestSellerProductChart
+    skipFullDashboard ? noopFetcher : OrderServices.getBestSellerProductChart
   );
 
   const { data: dashboardRecentOrder, loading: loadingRecentOrder } = useAsync(
-    isVendor
+    skipFullDashboard
       ? noopOrdersFetcher
       : () => OrderServices.getDashboardRecentOrder({ page: currentPage, limit: 8 })
   );
 
   const { data: dashboardOrderCount, loading: loadingOrderCount } = useAsync(
-    isVendor ? noopFetcher : OrderServices.getDashboardCount
+    skipFullDashboard ? noopFetcher : OrderServices.getDashboardCount
   );
 
   const { data: dashboardOrderAmount, loading: loadingOrderAmount } = useAsync(
-    isVendor ? noopFetcher : OrderServices.getDashboardAmount
+    skipFullDashboard ? noopFetcher : OrderServices.getDashboardAmount
   );
 
   // console.log("dashboardOrderCount", dashboardOrderCount);
 
-  const recentOrdersSource = isVendor ? [] : dashboardRecentOrder?.orders;
+  const recentOrdersSource = skipFullDashboard ? [] : dashboardRecentOrder?.orders;
   const { dataTable, serviceData } = useFilter(recentOrdersSource);
 
   useEffect(() => {
-    if (isVendor || !dashboardOrderAmount?.ordersData) {
+    if (skipFullDashboard || !dashboardOrderAmount?.ordersData) {
       setTodayOrderAmount(0);
       setYesterdayOrderAmount(0);
       setSalesReport([]);
@@ -270,7 +275,109 @@ const Dashboard = () => {
     setYesterdayCreditPayment(yesterday_credit_payment?.total);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dashboardOrderAmount, isVendor]);
+  }, [dashboardOrderAmount, skipFullDashboard]);
+
+  if (isLivreur) {
+    const livreurShortcuts = [
+      {
+        href: "/orders/board",
+        title: "Tableau des livraisons",
+        description: "Consultez et gérez vos livraisons en cours.",
+        Icon: FiTruck,
+      },
+      {
+        href: "/shipping-rates",
+        title: "Tarifs de livraison",
+        description: "Consultez les zones et tarifs de livraison.",
+        Icon: FiPackage,
+      },
+    ];
+
+    return (
+      <>
+        <PageTitle title="Espace livreur" />
+        <AnimatedContent>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100 mb-3">
+              Gestion des livraisons
+            </h2>
+            <p className="text-gray-600 dark:text-gray-300">
+              Votre espace est dédié à la gestion et au suivi des livraisons.
+              Consultez le tableau de bord des commandes à livrer et vérifiez les tarifs applicables.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2 mt-6">
+              {livreurShortcuts.map(({ href, title, description, Icon }) => (
+                <Link
+                  key={href}
+                  to={href}
+                  className="border border-emerald-100 dark:border-emerald-900 hover:border-emerald-500 rounded-lg p-4 transition-colors bg-emerald-50 dark:bg-emerald-900/30"
+                >
+                  <div className="flex items-center mb-3 text-emerald-600 dark:text-emerald-300">
+                    <Icon className="text-xl mr-2" />
+                    <span className="font-semibold">{title}</span>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    {description}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </AnimatedContent>
+      </>
+    );
+  }
+
+  if (isTrieur) {
+    const trieurShortcuts = [
+      {
+        href: "/orders",
+        title: "Gestion des commandes",
+        description: "Consultez et traitez toutes les commandes en attente.",
+        Icon: FiCompass,
+      },
+      {
+        href: "/orders/board",
+        title: "Tableau Kanban",
+        description: "Suivez l'avancement des commandes par statut.",
+        Icon: FiRefreshCw,
+      },
+    ];
+
+    return (
+      <>
+        <PageTitle title="Espace trieur" />
+        <AnimatedContent>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100 mb-3">
+              Traitement des commandes
+            </h2>
+            <p className="text-gray-600 dark:text-gray-300">
+              Votre rôle est de traiter et organiser les commandes avant expédition.
+              Utilisez les raccourcis ci-dessous pour gérer efficacement le flux de commandes.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2 mt-6">
+              {trieurShortcuts.map(({ href, title, description, Icon }) => (
+                <Link
+                  key={href}
+                  to={href}
+                  className="border border-blue-100 dark:border-blue-900 hover:border-blue-500 rounded-lg p-4 transition-colors bg-blue-50 dark:bg-blue-900/30"
+                >
+                  <div className="flex items-center mb-3 text-blue-600 dark:text-blue-300">
+                    <Icon className="text-xl mr-2" />
+                    <span className="font-semibold">{title}</span>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    {description}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </AnimatedContent>
+      </>
+    );
+  }
 
   if (isVendor) {
     const vendorShortcuts = [
@@ -393,7 +500,7 @@ const Dashboard = () => {
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <CardItem
-            title="Total Order"
+            title={t("TotalOrder")}
             Icon={FiShoppingCart}
             loading={loadingOrderCount}
             quantity={dashboardOrderCount?.totalOrder || 0}

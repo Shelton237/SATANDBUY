@@ -391,4 +391,28 @@ module.exports = {
   getCustomerById,
   updateCustomer,
   deleteCustomer,
+  getShippingAddress: async (req, res, next) => {
+    try {
+      const customer = await Customer.findById(req.params.id);
+      if (!customer) {
+        throw createError(404, "Client introuvable.");
+      }
+      res.send({ shippingAddress: customer.shippingAddress || null });
+    } catch (err) {
+      next(err);
+    }
+  },
+  addShippingAddress: async (req, res, next) => {
+    try {
+      const customer = await Customer.findById(req.params.id);
+      if (!customer) {
+        throw createError(404, "Client introuvable.");
+      }
+      customer.shippingAddress = req.body;
+      await customer.save();
+      res.send({ message: "Adresse de livraison enregistrée.", shippingAddress: customer.shippingAddress });
+    } catch (err) {
+      next(err);
+    }
+  },
 };

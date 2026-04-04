@@ -62,6 +62,12 @@ const useCheckoutSubmit = (storeSetting) => {
     loading: true,
     error: "",
   });
+  
+  // Locations states
+  const [availableLocations, setAvailableLocations] = useState([]); // [{country, cities[]}]
+  const [availableCountries, setAvailableCountries] = useState([]);
+  const [availableCities, setAvailableCities] = useState([]);
+
   const [shippingRates, setShippingRates] = useState([]);
   const [shippingRateLoading, setShippingRateLoading] = useState(false);
   const [selectedShippingRate, setSelectedShippingRate] = useState(null);
@@ -84,20 +90,63 @@ const useCheckoutSubmit = (storeSetting) => {
     setValue,
     watch,
     formState: { errors },
-  } = useForm();
+  } = useForm({
+    defaultValues: {
+      paymentMethod: "Cash",
+    },
+  });
   const watchedCountry = watch("country");
   const watchedCity = watch("city");
 
   useEffect(() => {
     if (Cookies.get("couponInfo")) {
       const coupon = JSON.parse(Cookies.get("couponInfo"));
-      // console.log('coupon information',coupon)
       setCouponInfo(coupon);
       setDiscountPercentage(coupon.discountType);
       setMinimumAmount(coupon.minimumAmount);
     }
-    setValue("email", userInfo?.email);
-  }, [isCouponApplied, userInfo?.email, setValue]);
+  }, [isCouponApplied]);
+
+  // Load available locations from backoffice
+  useEffect(() => {
+    ShippingRateServices.getLocations()
+      .then((locations) => {
+        setAvailableLocations(locations);
+        setAvailableCountries(locations.map((l) => l.country));
+      })
+      .catch((err) => {
+        console.error("Failed to load locations", err);
+      });
+  }, []);
+
+  // Update available cities when country changes
+  useEffect(() => {
+    if (watchedCountry) {
+      const location = availableLocations.find(
+        (l) => l.country.toLowerCase() === watchedCountry.toLowerCase()
+      );
+      setAvailableCities(location ? location.cities : []);
+    } else {
+      setAvailableCities([]);
+    }
+  }, [watchedCountry, availableLocations]);
+
+  // Pre-fill user data (always email, and name if available and no saved address yet)
+  useEffect(() => {
+    if (userInfo?.email) {
+      setValue("email", userInfo.email);
+    }
+    
+    // If we have userInfo but NO saved address yet, pre-fill from profile
+    if (userInfo?.name && !hasPrefilledAddress && !savedAddress) {
+      const parts = (userInfo.name || "").trim().split(/\s+/);
+      const firstName = parts[0] || "";
+      const lastName = parts.slice(1).join(" ") || "";
+      
+      setValue("firstName", firstName);
+      setValue("lastName", lastName);
+    }
+  }, [userInfo, setValue, hasPrefilledAddress, savedAddress]);
 
   useEffect(() => {
     if (hasShippingAddress && !hasPrefilledAddress) {
@@ -199,7 +248,6 @@ const useCheckoutSubmit = (storeSetting) => {
   }, [shippingRates, selectedShippingRate]);
 
   //calculate total and discount value
-  //calculate total and discount value
   useEffect(() => {
     const discountProductTotal = items?.reduce(
       (preValue, currentValue) => preValue + currentValue.itemTotal,
@@ -208,26 +256,16 @@ const useCheckoutSubmit = (storeSetting) => {
 
     let totalValue = 0;
     const subTotal = parseFloat(cartTotal + Number(shippingCost)).toFixed(2);
-    const discountAmount =
+    const discountAmountTotal =
       discountPercentage?.type === "fixed"
         ? discountPercentage?.value
         : discountProductTotal * (discountPercentage?.value / 100);
 
-    const discountAmountTotal = discountAmount ? discountAmount : 0;
+    totalValue = Number(subTotal) - (discountAmountTotal || 0);
 
-    totalValue = Number(subTotal) - discountAmountTotal;
-
-    setDiscountAmount(discountAmountTotal);
-
-    // console.log("total", totalValue);
-
+    setDiscountAmount(discountAmountTotal || 0);
     setTotal(totalValue);
   }, [cartTotal, shippingCost, discountPercentage]);
-
-  useEffect(() => {
-    if (!userInfo?.email) return;
-    setValue("email", userInfo.email);
-  }, [setValue, userInfo?.email]);
 
   useEffect(() => {
     if (userInfo === undefined) return;
@@ -249,7 +287,7 @@ const useCheckoutSubmit = (storeSetting) => {
       setError("");
 
       const userDetails = {
-        name: `${data.firstName} ${data.lastName}`,
+        name: `${data.firstName || ""} ${data.lastName || ""}`.trim(),
         contact: data.contact,
         email: data.email,
         address: data.address,
@@ -284,7 +322,7 @@ const useCheckoutSubmit = (storeSetting) => {
       await CustomerServices.addShippingAddress({
         userId: userInfo.id,
         shippingAddressData: {
-          name: `${data.firstName || ""} ${data.lastName || ""}`.trim(),
+          name: userDetails.name,
           contact: data.contact,
           email: userInfo?.email,
           address: data.address,
@@ -296,6 +334,8 @@ const useCheckoutSubmit = (storeSetting) => {
 
       if (data.paymentMethod === "Card") {
         if (!stripe || !elements) {
+          notifyError("Stripe n'est pas prêt. Veuillez patienter.");
+          setIsCheckoutSubmit(false);
           return;
         }
 
@@ -304,11 +344,10 @@ const useCheckoutSubmit = (storeSetting) => {
           card: elements.getElement(CardElement),
         });
 
-        // console.log('error', error);
-
         if (error && !paymentMethod) {
           setError(error.message);
           setIsCheckoutSubmit(false);
+          notifyError(error.message);
         } else {
           setError("");
           const orderData = {
@@ -317,8 +356,6 @@ const useCheckoutSubmit = (storeSetting) => {
           };
 
           await handlePaymentWithStripe(orderData);
-
-          // console.log('cardInfo', orderData);
           return;
         }
       }
@@ -348,7 +385,7 @@ const useCheckoutSubmit = (storeSetting) => {
         setIsCheckoutSubmit(false);
       }
     } catch (err) {
-      notifyError(err ? err?.response?.data?.message : err?.message);
+      notifyError(err?.response?.data?.message || err?.message);
       setIsCheckoutSubmit(false);
     }
   };
@@ -357,13 +394,7 @@ const useCheckoutSubmit = (storeSetting) => {
 
   const handlePaymentWithStripe = async (order) => {
     try {
-      // console.log('try goes here!', order);
-      // const updatedOrder = {
-      //   ...order,
-      //   currency: 'usd',
-      // };
       const stripeInfo = await OrderServices.createPaymentIntent(order);
-      // console.log("res", stripeInfo, "order", order);
       stripe.confirmCardPayment(stripeInfo?.client_secret, {
         payment_method: {
           card: elements.getElement(CardElement),
@@ -375,7 +406,6 @@ const useCheckoutSubmit = (storeSetting) => {
         cardInfo: stripeInfo,
       };
       const orderResponse = await OrderServices.addOrder(orderData);
-      console.log("orderResponse", orderResponse);
       // notification info
       const notificationInfo = {
         orderId: orderResponse._id,
@@ -395,7 +425,6 @@ const useCheckoutSubmit = (storeSetting) => {
 
       setIsCheckoutSubmit(false);
     } catch (err) {
-      // console.log("err", err?.message);
       notifyError(err?.response?.data?.message || err?.message);
       setIsCheckoutSubmit(false);
     }
@@ -409,19 +438,14 @@ const useCheckoutSubmit = (storeSetting) => {
           amount: Math.round(total).toString(),
         });
 
-      // console.log("amount:::", amount);
-      // setIsCheckoutSubmit(false);
-
       if ((amount, id, currency)) {
         const razorpayKey = storeSetting?.razorpay_id;
-
-        // console.log("razorpayKey", razorpayKey);
 
         const options = {
           key: razorpayKey,
           amount: amount,
           currency: currency,
-          name: "Fably Store",
+          name: "Sat & Buy",
           description: "This is total cost of your purchase",
           order_id: id,
           handler: async function (response) {
@@ -435,46 +459,33 @@ const useCheckoutSubmit = (storeSetting) => {
             const orderData = {
               ...orderInfo,
               total: total,
-              cardCharge: cardCharge,
               razorpay,
             };
 
-            const res = await OrderServices.addRazorpayOrder(orderData);
+            const res = await OrderServices.addOrder(orderData);
             if (res) {
               router.push(`/order/${res._id}`);
               notifySuccess("Votre commande est confirmée !");
               Cookies.remove("couponInfo");
-              localStorage.removeItem("products");
               emptyCart();
 
               await NotificationServices.addNotification({
-                message: `${data?.firstName} placed $${total} order!`,
+                message: `${orderInfo?.user_info?.name} placed $${total} order!`,
                 orderId: res._id,
-                image: userInfo?.image,
-              });
-              socket.emit("notification", {
-                message: `${data.firstName} placed $${total} order!`,
-                orderId: res._id,
-                image: userInfo?.image,
               });
             }
           },
 
           modal: {
             ondismiss: function () {
-              setTotal(total);
               setIsCheckoutSubmit(false);
-              console.log("Checkout form closed!");
             },
           },
 
           prefill: {
-            name: "Alamgir",
-            email: "alamgirh389@example.com",
-            contact: "01957434434",
-          },
-          notes: {
-            address: "Mumbai, India",
+            name: orderInfo?.user_info?.name,
+            email: orderInfo?.user_info?.email,
+            contact: orderInfo?.user_info?.contact,
           },
           theme: {
             color: "#10b981",
@@ -527,7 +538,6 @@ const useCheckoutSubmit = (storeSetting) => {
   };
 
   const handleDefaultShippingAddress = (value) => {
-    // console.log("handle default shipping", value);
     setUseExistingAddress(value);
     if (value) {
       fillShippingForm(savedAddress);
@@ -563,12 +573,12 @@ const useCheckoutSubmit = (storeSetting) => {
 
       if (total < result[0]?.minimumAmount) {
         notifyError(
-          `Minimum ${result[0].minimumAmount} USD required for Apply this coupon!`
+          `Minimum ${result[0].minimumAmount} ${result[0]?.currency || 'XAF'} requis pour ce coupon !`
         );
         return;
       } else {
         notifySuccess(
-          `Your Coupon ${result[0].couponCode} is Applied on ${result[0].productType}!`
+          `Votre coupon ${result[0].couponCode} a été appliqué !`
         );
         setIsCouponApplied(true);
         setMinimumAmount(result[0]?.minimumAmount);
@@ -610,6 +620,10 @@ const useCheckoutSubmit = (storeSetting) => {
     hasShippingAddress,
     isCouponAvailable,
     handleDefaultShippingAddress,
+    availableCountries,
+    availableCities,
+    watch,
+    setValue,
   };
 };
 

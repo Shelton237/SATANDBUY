@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 //internal import
-// import useAsync from "./useAsync";
 import SettingServices from "@services/SettingServices";
 import { addSetting } from "@redux/slice/settingSlice";
 import { storeCustomization } from "@utils/storeCustomizationSetting";
@@ -24,12 +23,6 @@ const useGetSetting = () => {
   const lang = Cookies.get("_lang");
   const dispatch = useDispatch();
 
-  // const { data: globalSetting } = useAsync(SettingServices.getGlobalSetting);
-  // const {
-  //   data: storeCustomizationSetting,
-  //   loading,
-  //   error,
-  // } = useAsync(SettingServices.getStoreCustomizationSetting);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -61,18 +54,34 @@ const useGetSetting = () => {
         const res = await SettingServices.getStoreCustomizationSetting();
         const hasRemoteData = hasContent(res);
 
-        const storeCustomizationSettingData = hasRemoteData
+        // Deep-merge: local defaults first, API data overrides section by section.
+        // This ensures fields missing from the DB are always filled from local defaults,
+        // fixing empty header, footer, and banner sections.
+        const localDefaults = storeCustomization?.setting || {};
+        const merged = hasRemoteData
           ? {
-              ...res,
+              navbar: { ...localDefaults.navbar, ...(res.navbar || {}) },
+              home: { ...localDefaults.home, ...(res.home || {}) },
+              footer: { ...localDefaults.footer, ...(res.footer || {}) },
+              about_us: { ...localDefaults.about_us, ...(res.about_us || {}) },
+              contact_us: { ...localDefaults.contact_us, ...(res.contact_us || {}) },
+              slider: { ...localDefaults.slider, ...(res.slider || {}) },
+              offers: { ...localDefaults.offers, ...(res.offers || {}) },
+              faq: { ...localDefaults.faq, ...(res.faq || {}) },
+              privacy_policy: { ...localDefaults.privacy_policy, ...(res.privacy_policy || {}) },
+              term_and_condition: { ...localDefaults.term_and_condition, ...(res.term_and_condition || {}) },
+              checkout: { ...localDefaults.checkout, ...(res.checkout || {}) },
+              dashboard: { ...localDefaults.dashboard, ...(res.dashboard || {}) },
+              slug: { ...localDefaults.slug, ...(res.slug || {}) },
+              seo: { ...localDefaults.seo, ...(res.seo || {}) },
               name: "storeCustomizationSetting",
             }
           : {
-              ...storeCustomization?.setting,
+              ...localDefaults,
               name: "storeCustomizationSetting",
             };
 
-        dispatch(addSetting(storeCustomizationSettingData));
-
+        dispatch(addSetting(merged));
         setLoading(false);
       } catch (err) {
         setError(err.message);
@@ -88,17 +97,12 @@ const useGetSetting = () => {
 
     const fetchGlobalSetting = async () => {
       try {
-        // setLoading(true);
-        // console.log("globalSetting setting not available");
         const res = await SettingServices.getGlobalSetting();
         const globalSettingData = {
           ...res,
           name: "globalSetting",
         };
-
         dispatch(addSetting(globalSettingData));
-
-        // setLoading(false);
       } catch (err) {
         setError(err.message);
         console.log("Error on getting globalSetting setting", err);

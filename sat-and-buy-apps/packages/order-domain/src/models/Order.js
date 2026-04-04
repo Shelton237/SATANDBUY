@@ -1,6 +1,5 @@
 const { mongo } = require("@satandbuy/shared");
 const mongoose = mongo.mongoose;
-const AutoIncrement = require("mongoose-sequence")(mongoose);
 
 const ORDER_STATUSES = [
   "Pending",
@@ -192,11 +191,26 @@ const orderSchema = new mongoose.Schema(
   }
 );
 
-const Order = mongoose.model(
-  "Order",
-  orderSchema.plugin(AutoIncrement, {
-    inc_field: "invoice",
-    start_seq: 10000,
-  })
-);
+// Generate invoice number using a simple, non-blocking counter
+orderSchema.pre("save", async function (next) {
+  if (this.isNew && !this.invoice) {
+    try {
+      const counter = await mongoose.connection
+        .collection("counters")
+        .findOneAndUpdate(
+          { _id: "orders_invoice" },
+          { $inc: { seq: 1 } },
+          { upsert: true, returnDocument: "after" }
+        );
+      this.invoice = counter?.seq ?? counter?.value?.seq ?? 10000;
+    } catch (err) {
+      // fallback: timestamp-based invoice — never blocks
+      console.warn("[Order] counter fallback:", err.message);
+      this.invoice = Date.now();
+    }
+  }
+  next();
+});
+
+const Order = mongoose.model("Order", orderSchema);
 module.exports = Order;

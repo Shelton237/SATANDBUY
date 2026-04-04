@@ -1,4 +1,4 @@
-import { orderHttp as requests } from "./httpClients";
+import { apiHttp as requests } from "./httpClients";
 import { withToken } from "@/utils/tokenHelper";
 
 const OrderServices = {

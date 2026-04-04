@@ -45,9 +45,9 @@ const staff = [
   {
     _id: ids.admins.super,
     name: { en: "Super Admin", display: "Super Admin" },
-    email: "admin@satandbuy.local",
+    email: "admin@gmail.com",
     phone: "+237-690-000-000",
-    password: bcrypt.hashSync("Admin@123"),
+    password: bcrypt.hashSync("12345678"),
     role: "Admin",
     status: "Active",
     joiningDate: new Date("2025-01-15T08:00:00Z"),

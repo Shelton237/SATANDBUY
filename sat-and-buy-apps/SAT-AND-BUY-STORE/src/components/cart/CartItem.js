@@ -5,12 +5,14 @@ import { FiPlus, FiMinus, FiTrash2 } from "react-icons/fi";
 
 //internal import
 import useAddToCart from "@hooks/useAddToCart";
+import useUtilsFunction from "@hooks/useUtilsFunction";
 import { SidebarContext } from "@context/SidebarContext";
 
-const CartItem = ({ item, currency }) => {
+const CartItem = ({ item }) => {
   const { updateItemQuantity, removeItem } = useCart();
   const { closeCartDrawer } = useContext(SidebarContext);
   const { handleIncreaseQuantity } = useAddToCart();
+  const { currency, getNumberTwo } = useUtilsFunction();
 
   // console.log("item>>", item);
 
@@ -34,13 +36,12 @@ const CartItem = ({ item, currency }) => {
           {item.title}
         </Link>
         <span className="text-xs text-gray-400 mb-1">
-          Item Price ${item.price}
+          {getNumberTwo(item.price)} {currency}
         </span>
         <div className="flex items-center justify-between">
           <div className="font-bold text-sm md:text-base text-heading leading-5">
             <span>
-              {currency}
-              {(item.price * item.quantity).toFixed(2)}
+              {getNumberTwo(item.price * item.quantity)} {currency}
             </span>
           </div>
           <div className="h-8 w-22 md:w-24 lg:w-24 flex flex-wrap items-center justify-evenly p-1 border border-gray-100 bg-white text-gray-600 rounded-md">

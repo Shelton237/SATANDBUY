@@ -75,7 +75,7 @@ const getGlobalSetting = async (req, res) => {
       "globalSetting",
       DEFAULT_GLOBAL_SETTING
     );
-    res.send(globalSetting.setting || DEFAULT_GLOBAL_SETTING);
+    res.send(globalSetting?.setting || DEFAULT_GLOBAL_SETTING);
   } catch (err) {
     console.error("[settings-domain] getGlobalSetting error", err);
     res.status(500).send({
@@ -180,7 +180,7 @@ const getStoreSetting = async (req, res) => {
       DEFAULT_STORE_SETTING
     );
 
-    res.send(storeSetting.setting || DEFAULT_STORE_SETTING);
+    res.send(storeSetting?.setting || DEFAULT_STORE_SETTING);
   } catch (err) {
     res.status(500).send({
       message: err.message,
@@ -280,7 +280,7 @@ const getStoreCustomizationSetting = async (req, res) => {
       return res.status(404).send({ message: "Settings not found" });
     }
 
-    const selection = storeCustomizationSetting.setting || DEFAULT_STORE_CUSTOMIZATION_SETTING;
+    const selection = storeCustomizationSetting?.setting || DEFAULT_STORE_CUSTOMIZATION_SETTING;
 
     if (key || keyTwo) {
       const partial = {};
@@ -753,7 +753,7 @@ const updateStoreCustomizationSetting = async (req, res) => {
     );
 
     res.send({
-      data: storeCustomizationSetting.setting,
+      data: storeCustomizationSetting?.setting || {},
       message: "Online Store Customization Setting Update Successfully!",
     });
   } catch (err) {

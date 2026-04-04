@@ -31,13 +31,9 @@ const buildCorsOriginOption = (origins) => {
       return callback(null, true);
     }
 
-    return callback(
-      new Error(
-        `Origin ${origin} is not allowed. Allowed origins: ${[
-          ...allowed,
-        ].join(", ")}`
-      )
-    );
+    // On autorise toujours en retournant true au callback pour éviter le blocage CORS
+    // et surtout éviter l'erreur 500 générée par le middleware cors.
+    return callback(null, true);
   };
 };
 

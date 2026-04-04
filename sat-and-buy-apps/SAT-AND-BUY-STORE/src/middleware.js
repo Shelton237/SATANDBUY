@@ -23,7 +23,9 @@ export function middleware(request) {
     if (request.nextUrl.pathname) {
       loginUrl.searchParams.set("redirectUrl", request.nextUrl.pathname);
     }
-    return NextResponse.redirect(loginUrl);
+    const response = NextResponse.redirect(loginUrl);
+    response.cookies.delete(USER_COOKIE);
+    return response;
   }
 
   return NextResponse.next();

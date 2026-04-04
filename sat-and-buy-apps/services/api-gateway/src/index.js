@@ -17,6 +17,7 @@ const config = {
   settingsUrl: process.env.SETTINGS_SERVICE_URL,
   notificationUrl: process.env.NOTIFICATION_SERVICE_URL,
   deliveryUrl: process.env.DELIVERY_SERVICE_URL,
+  boutiqueUrl: process.env.BOUTIQUE_SERVICE_URL,
   corsOrigin: process.env.CORS_ORIGIN || "*",
   logLevel: process.env.LOG_LEVEL || "warn",
   logFormat: process.env.LOG_FORMAT || "dev",

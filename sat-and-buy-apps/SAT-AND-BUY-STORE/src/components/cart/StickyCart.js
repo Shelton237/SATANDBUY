@@ -1,19 +1,16 @@
 import dynamic from "next/dynamic";
-import React, { useContext, useState } from "react";
+import React, { useContext } from "react";
 import { IoBagHandleOutline } from "react-icons/io5";
 import { useCart } from "react-use-cart";
 
 //internal import
 import { SidebarContext } from "@context/SidebarContext";
-import useAsync from "@hooks/useAsync";
-import SettingServices from "@services/SettingServices";
+import useUtilsFunction from "@hooks/useUtilsFunction";
 
 const StickyCart = () => {
   const { totalItems, cartTotal } = useCart();
   const { toggleCartDrawer } = useContext(SidebarContext);
-  const { data: globalSetting } = useAsync(SettingServices.getGlobalSetting);
-
-  const currency = globalSetting?.default_currency || "FCFA";
+  const { currency, getNumberTwo } = useUtilsFunction();
 
   return (
     <button aria-label="Cart" onClick={toggleCartDrawer} className="absolute">
@@ -27,8 +24,7 @@ const StickyCart = () => {
           </span>
         </div>
         <div className="flex flex-col items-center justify-center bg-emerald-700 p-2 text-white text-base font-serif font-medium rounded-bl-lg mx-auto">
-          {currency}
-          {cartTotal.toFixed(2)}
+          {getNumberTwo(cartTotal)} {currency}
         </div>
       </div>
     </button>

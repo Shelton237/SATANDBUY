@@ -26,11 +26,12 @@ import useCheckoutSubmit from "@hooks/useCheckoutSubmit";
 import useUtilsFunction from "@hooks/useUtilsFunction";
 import SettingServices from "@services/SettingServices";
 import SwitchToggle from "@components/form/SwitchToggle";
+import SelectOption from "@components/form/SelectOption";
 
 const Checkout = () => {
   const { t } = useTranslation();
   const { storeCustomizationSetting } = useGetSetting();
-  const { showingTranslateValue, currency } = useUtilsFunction();
+  const { showingTranslateValue, currency, getNumberTwo } = useUtilsFunction();
   const { data: storeSetting } = useAsync(SettingServices.getStoreSetting);
 
   const {
@@ -60,16 +61,11 @@ const Checkout = () => {
     hasShippingAddress,
     isCouponAvailable,
     handleDefaultShippingAddress,
+    availableCountries,
+    availableCities,
+    setValue,
+    watch,
   } = useCheckoutSubmit();
-
-  // console.log(
-  //   "shippingCost",
-  //   shippingCost,
-  //   "  storeCustomizationSetting?.checkout",
-  //   storeCustomizationSetting?.checkout
-  // );
-
-  // console.log("storeCustomizationSetting", storeCustomizationSetting);
 
   return (
     <>
@@ -178,29 +174,27 @@ const Checkout = () => {
                       </div>
 
                       <div className="col-span-6 sm:col-span-6 lg:col-span-2">
-                        <InputArea
-                          register={register}
-                          label={showingTranslateValue(
-                            storeCustomizationSetting?.checkout?.city
-                          )}
-                          name="city"
-                          type="text"
-                          placeholder="Los Angeles"
-                        />
-                        <Error errorName={errors.city} />
-                      </div>
-
-                      <div className="col-span-6 sm:col-span-3 lg:col-span-2">
-                        <InputArea
+                        <SelectOption
                           register={register}
                           label={showingTranslateValue(
                             storeCustomizationSetting?.checkout?.country
                           )}
                           name="country"
-                          type="text"
-                          placeholder="United States"
+                          options={availableCountries}
                         />
                         <Error errorName={errors.country} />
+                      </div>
+
+                      <div className="col-span-6 sm:col-span-3 lg:col-span-2">
+                        <SelectOption
+                          register={register}
+                          label={showingTranslateValue(
+                            storeCustomizationSetting?.checkout?.city
+                          )}
+                          name="city"
+                          options={availableCities}
+                        />
+                        <Error errorName={errors.city} />
                       </div>
 
                       <div className="col-span-6 sm:col-span-3 lg:col-span-2">
@@ -249,8 +243,7 @@ const Checkout = () => {
                         ))
                       ) : (
                         <div className="col-span-6 text-sm text-gray-500">
-                          Entrez votre pays et votre ville pour voir les options
-                          de livraison disponibles.
+                          {availableCountries.length === 0 ? "Chargement des destinations..." : "Sélectionnez votre pays et votre ville pour voir les options de livraison."}
                         </div>
                       )}
                     </div>
@@ -269,24 +262,24 @@ const Checkout = () => {
                       </div>
                     )}
                     <div className="grid sm:grid-cols-3 grid-cols-1 gap-4">
-                      {storeSetting?.cod_status && (
-                        <div className="">
-                          <InputPayment
-                            setShowCard={setShowCard}
-                            register={register}
-                            name={t("common:cashOnDelivery")}
-                            value="Cash"
-                            Icon={IoWalletSharp}
-                          />
-                          <Error errorMessage={errors.paymentMethod} />
-                        </div>
-                      )}
+                      <div className="">
+                        <InputPayment
+                          setShowCard={setShowCard}
+                          register={register}
+                          watch={watch}
+                          name={t("common:cashOnDelivery")}
+                          value="Cash"
+                          Icon={IoWalletSharp}
+                        />
+                        <Error errorMessage={errors.paymentMethod} />
+                      </div>
 
-                      {storeSetting?.stripe_status && (
+                      {(storeSetting?.stripe_status || !storeSetting?.hasOwnProperty('stripe_status')) && (
                         <div className="">
                           <InputPayment
                             setShowCard={setShowCard}
                             register={register}
+                            watch={watch}
                             name={t("common:creditCard")}
                             value="Card"
                             Icon={ImCreditCard}
@@ -300,19 +293,6 @@ const Checkout = () => {
                           <Error errorMessage={errors.paymentMethod} />
                         </div>
                       )}
-
-                      {/* {storeSetting?.razorpay_status && ( */}
-                      <div className="">
-                        <InputPayment
-                          setShowCard={setShowCard}
-                          register={register}
-                          name="RazorPay"
-                          value="RazorPay"
-                          Icon={ImCreditCard}
-                        />
-                        <Error errorMessage={errors.paymentMethod} />
-                      </div>
-                      {/* )} */}
                     </div>
                   </div>
 
@@ -382,7 +362,7 @@ const Checkout = () => {
 
                 <div className="overflow-y-scroll flex-grow scrollbar-hide w-full max-h-64 bg-gray-50 block">
                   {items.map((item) => (
-                    <CartItem key={item.id} item={item} currency={currency} />
+                    <CartItem key={item.id} item={item} />
                   ))}
 
                   {isEmpty && (
@@ -449,8 +429,7 @@ const Checkout = () => {
                     storeCustomizationSetting?.checkout?.sub_total
                   )}
                   <span className="ml-auto flex-shrink-0 text-gray-800 font-bold">
-                    {currency}
-                    {cartTotal?.toFixed(2)}
+                    {getNumberTwo(cartTotal)} {currency}
                   </span>
                 </div>
                 <div className="flex items-center py-2 text-sm w-full font-semibold text-gray-500 last:border-b-0 last:text-base last:pb-0">
@@ -458,8 +437,7 @@ const Checkout = () => {
                     storeCustomizationSetting?.checkout?.shipping_cost
                   )}
                   <span className="ml-auto flex-shrink-0 text-gray-800 font-bold">
-                    {currency}
-                    {shippingCost?.toFixed(2)}
+                    {getNumberTwo(shippingCost)} {currency}
                   </span>
                 </div>
                 <div className="flex items-center py-2 text-sm w-full font-semibold text-gray-500 last:border-b-0 last:text-base last:pb-0">
@@ -467,8 +445,7 @@ const Checkout = () => {
                     storeCustomizationSetting?.checkout?.discount
                   )}
                   <span className="ml-auto flex-shrink-0 font-bold text-orange-400">
-                    {currency}
-                    {discountAmount.toFixed(2)}
+                    {getNumberTwo(discountAmount)} {currency}
                   </span>
                 </div>
                 <div className="border-t mt-4">
@@ -477,8 +454,7 @@ const Checkout = () => {
                       storeCustomizationSetting?.checkout?.total_cost
                     )}
                     <span className="font-serif font-extrabold text-lg">
-                      {currency}
-                      {parseFloat(total).toFixed(2)}
+                      {getNumberTwo(total)} {currency}
                     </span>
                   </div>
                 </div>

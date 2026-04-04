@@ -37,8 +37,7 @@ const InputShipping = ({
                 <p className="text-xs text-gray-500 font-medium">
                   {description}
                   <span className="font-medium text-gray-600">
-                    {currency}
-                    {parseFloat(cost).toFixed(2)}
+                    {parseFloat(cost || 0).toFixed(0)} {currency}
                   </span>
                 </p>
               </div>

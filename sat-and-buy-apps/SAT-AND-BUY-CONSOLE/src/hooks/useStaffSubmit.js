@@ -27,7 +27,11 @@ const useStaffSubmit = (id) => {
 
   const buildStaffPayload = useCallback(
     (data) => {
-      const fullName = `${data.firstName || ""} ${data.lastName || ""}`.trim() || data.username;
+      // Support single "name" field (EditProfile) or firstName+lastName (StaffDrawer)
+      const fullName =
+        data.name ||
+        `${data.firstName || ""} ${data.lastName || ""}`.trim() ||
+        data.username;
       const safeRole = data.role || STAFF_ROLE_VALUES[0];
       return {
         name: { [state.language]: fullName },
@@ -87,6 +91,8 @@ const useStaffSubmit = (id) => {
         imageUrl: user.image || "",
         availabilitySlots: user.availabilitySlots || [],
       }));
+      const rawName = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.username || "";
+      setValue("name", rawName);
       ["firstName", "lastName", "email", "phone", "username"].forEach((field) =>
         setValue(field, user[field] || "")
       );

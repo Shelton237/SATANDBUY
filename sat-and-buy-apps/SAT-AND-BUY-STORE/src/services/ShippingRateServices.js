@@ -12,6 +12,10 @@ const ShippingRateServices = {
       )
       .then((res) => res?.rates || res || []);
   },
+
+  getLocations: async () => {
+    return requests.get("/shipping-rate/locations").then((res) => res || []);
+  },
 };
 
 export default ShippingRateServices;

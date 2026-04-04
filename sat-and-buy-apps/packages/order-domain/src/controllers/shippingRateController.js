@@ -238,10 +238,37 @@ const getPublicShippingRates = async (req, res) => {
   }
 };
 
+const getPublicLocations = async (req, res) => {
+  try {
+    const locations = await ShippingRate.aggregate([
+      { $match: { status: "active", approvalStatus: "approved" } },
+      {
+        $group: {
+          _id: { country: "$country" },
+          cities: { $addToSet: "$city" },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          country: "$_id.country",
+          cities: 1,
+        },
+      },
+      { $sort: { country: 1 } },
+    ]);
+
+    res.send(locations);
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+};
+
 module.exports = {
   createShippingRate,
   getShippingRates,
   updateShippingRate,
   deleteShippingRate,
   getPublicShippingRates,
+  getPublicLocations,
 };
