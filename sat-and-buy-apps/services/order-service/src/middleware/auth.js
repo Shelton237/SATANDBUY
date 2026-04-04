@@ -40,7 +40,23 @@ const isAdmin = (req, res, next) => {
   next();
 };
 
+// Accepte tout JWT valide (customer ou admin)
+const isAuthAny = (req, res, next) => {
+  try {
+    const token = extractToken(req.headers.authorization || "");
+    if (!token) {
+      return res.status(401).send({ message: "Authorization token missing." });
+    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    res.status(401).send({ message: error.message || "Invalid authentication token." });
+  }
+};
+
 module.exports = {
   isAuth,
   isAdmin,
+  isAuthAny,
 };

@@ -101,24 +101,6 @@ const BoutiqueServices = {
     return requests.put(`/boutique-comments/${id}`, data);
   },
 
-  // Commandes boutique
-  createBoutiqueOrder: async (data) => {
-    return requests.post("/boutique-orders", data);
-  },
-
-  getMyBoutiqueOrders: async ({ page = 1, limit = 20 } = {}) => {
-    return requests.get(`/boutique-orders/me?page=${page}&limit=${limit}`);
-  },
-
-  getBoutiqueReceivedOrders: async ({ page = 1, limit = 20, status = "" } = {}) => {
-    const params = new URLSearchParams({ page, limit });
-    if (status) params.set("status", status);
-    return requests.get(`/boutique-orders/boutique?${params.toString()}`);
-  },
-
-  updateBoutiqueOrderStatus: async (orderId, status) => {
-    return requests.put(`/boutique-orders/${orderId}/status`, { status });
-  },
 };
 
 export default BoutiqueServices;

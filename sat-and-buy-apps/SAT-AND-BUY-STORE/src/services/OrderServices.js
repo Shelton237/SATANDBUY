@@ -29,6 +29,13 @@ const OrderServices = {
   confirmDelivery: async (id) => {
     return requests.put(`/order/${id}/confirm-delivery`);
   },
+
+  // Commandes reçues pour une boutique (propriétaire)
+  getBoutiqueOrders: async ({ boutiqueId, page = 1, limit = 10, status = "" } = {}) => {
+    const params = new URLSearchParams({ boutiqueId, page, limit });
+    if (status) params.set("status", status);
+    return requests.get(`/order/boutique?${params.toString()}`);
+  },
 };
 
 export default OrderServices;

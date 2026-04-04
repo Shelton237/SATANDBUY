@@ -3,6 +3,7 @@ import { useState, useEffect, useContext } from "react";
 import {
   IoAdd, IoClose, IoPencil, IoTrash, IoCheckmarkCircle,
   IoTimeOutline, IoAlertCircleOutline, IoStorefrontOutline,
+  IoImageOutline,
 } from "react-icons/io5";
 import BoutiqueDashboardLayout, { TYPE_CONFIG } from "@components/boutique/BoutiqueDashboardLayout";
 import BoutiqueServices from "@services/BoutiqueServices";
@@ -44,8 +45,24 @@ const SubmitProductModal = ({ categories, boutiqueId, editProduct, onClose, onSa
     return { ...defaultForm };
   });
   const [loading, setLoading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImage(true);
+    try {
+      const res = await BoutiqueServices.uploadImage(file);
+      set("image", [res.url]);
+      notifySuccess("Image uploadée.");
+    } catch {
+      notifyError("Erreur lors de l'upload de l'image.");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -161,6 +178,41 @@ const SubmitProductModal = ({ categories, boutiqueId, editProduct, onClose, onSa
                   className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-emerald-400" />
               </div>
             )}
+          </div>
+
+          {/* Image */}
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Photo du produit</label>
+            <div className="flex items-center gap-3">
+              {form.image?.[0] ? (
+                <div className="relative flex-shrink-0">
+                  <img
+                    src={form.image[0]}
+                    alt="preview"
+                    className="w-16 h-16 rounded-xl object-cover border border-gray-200"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => set("image", [])}
+                    className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs"
+                  >
+                    <IoClose />
+                  </button>
+                </div>
+              ) : (
+                <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center text-gray-300 flex-shrink-0">
+                  <IoImageOutline className="text-2xl" />
+                </div>
+              )}
+              <label className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium cursor-pointer transition-colors ${
+                uploadingImage
+                  ? "bg-gray-100 text-gray-400 pointer-events-none"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}>
+                <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploadingImage} />
+                {uploadingImage ? "Upload en cours…" : form.image?.[0] ? "Changer l'image" : "Choisir une image"}
+              </label>
+            </div>
           </div>
 
           {/* Note validation */}

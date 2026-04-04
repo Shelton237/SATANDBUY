@@ -1,16 +1,18 @@
 import dynamic from "next/dynamic";
 import { useState, useEffect, useContext } from "react";
-import { IoListOutline, IoCheckmarkOutline, IoCloseOutline, IoTimeOutline } from "react-icons/io5";
+import { IoListOutline, IoReceiptOutline } from "react-icons/io5";
 import BoutiqueDashboardLayout, { TYPE_CONFIG } from "@components/boutique/BoutiqueDashboardLayout";
 import BoutiqueServices from "@services/BoutiqueServices";
+import OrderServices from "@services/OrderServices";
 import { UserContext } from "@context/UserContext";
-import { notifyError, notifySuccess } from "@utils/toast";
 
 const STATUS_CONFIG = {
-  pending:   { label: "En attente",  color: "bg-orange-100 text-orange-600" },
-  confirmed: { label: "Confirmé",    color: "bg-emerald-100 text-emerald-700" },
-  completed: { label: "Terminé",     color: "bg-blue-100 text-blue-700" },
-  cancelled: { label: "Annulé",      color: "bg-red-100 text-red-500" },
+  Pending:          { label: "En attente",        color: "bg-orange-100 text-orange-600" },
+  Sorting:          { label: "En traitement",     color: "bg-yellow-100 text-yellow-700" },
+  ReadyForDelivery: { label: "Prêt à livrer",     color: "bg-blue-100 text-blue-700" },
+  Processing:       { label: "En livraison",      color: "bg-indigo-100 text-indigo-600" },
+  Delivered:        { label: "Livré",             color: "bg-emerald-100 text-emerald-700" },
+  Cancel:           { label: "Annulé",            color: "bg-red-100 text-red-500" },
 };
 
 const BoutiqueOrdersPage = () => {
@@ -20,7 +22,6 @@ const BoutiqueOrdersPage = () => {
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("");
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(null);
   const [boutique, setBoutique] = useState(null);
   const LIMIT = 10;
 
@@ -32,10 +33,14 @@ const BoutiqueOrdersPage = () => {
   }, [userInfo]);
 
   const fetchOrders = async (p = 1) => {
+    if (!boutique?._id) return;
     setLoading(true);
     try {
-      const res = await BoutiqueServices.getBoutiqueReceivedOrders({
-        page: p, limit: LIMIT, status: statusFilter,
+      const res = await OrderServices.getBoutiqueOrders({
+        boutiqueId: boutique._id,
+        page: p,
+        limit: LIMIT,
+        status: statusFilter,
       });
       setOrders(res.orders || []);
       setTotal(res.total || 0);
@@ -46,19 +51,17 @@ const BoutiqueOrdersPage = () => {
     }
   };
 
-  useEffect(() => { fetchOrders(1); }, [statusFilter, userInfo]);
+  useEffect(() => {
+    if (boutique?._id) fetchOrders(1);
+  }, [boutique, statusFilter]);
 
-  const handleStatus = async (orderId, status) => {
-    setActionLoading(orderId + status);
-    try {
-      await BoutiqueServices.updateBoutiqueOrderStatus(orderId, status);
-      notifySuccess("Statut mis à jour.");
-      fetchOrders(page);
-    } catch (err) {
-      notifyError(err?.response?.data?.message || "Erreur.");
-    } finally {
-      setActionLoading(null);
-    }
+  const getBoutiqueItems = (order) =>
+    (order.cart || []).filter((item) => String(item.boutiqueId) === String(boutique?._id));
+
+  const getTitle = (item) => {
+    if (!item.title) return item.name || "Produit";
+    if (typeof item.title === "string") return item.title;
+    return item.title.fr || item.title.en || "Produit";
   };
 
   const config = boutique ? (TYPE_CONFIG[boutique.businessType] || TYPE_CONFIG.other) : TYPE_CONFIG.other;
@@ -76,10 +79,11 @@ const BoutiqueOrdersPage = () => {
         <div className="flex gap-2 flex-wrap">
           {[
             { value: "", label: "Toutes" },
-            { value: "pending", label: "En attente" },
-            { value: "confirmed", label: "Confirmées" },
-            { value: "completed", label: "Terminées" },
-            { value: "cancelled", label: "Annulées" },
+            { value: "Pending", label: "En attente" },
+            { value: "Sorting", label: "En traitement" },
+            { value: "Processing", label: "En livraison" },
+            { value: "Delivered", label: "Livrées" },
+            { value: "Cancel", label: "Annulées" },
           ].map((f) => (
             <button
               key={f.value}
@@ -107,77 +111,67 @@ const BoutiqueOrdersPage = () => {
               <p className="text-sm">Aucune commande trouvée.</p>
             </div>
           ) : (
-            orders.map((order) => (
-              <div key={order._id} className="bg-white rounded-2xl p-4 flex flex-col sm:flex-row gap-4">
-                {/* Article */}
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  {order.catalogItemId?.images?.[0] ? (
-                    <img
-                      src={order.catalogItemId.images[0]}
-                      alt=""
-                      className="w-14 h-14 rounded-xl object-cover flex-shrink-0"
-                    />
-                  ) : (
-                    <div className="w-14 h-14 rounded-xl bg-gray-100 flex items-center justify-center text-2xl flex-shrink-0">
-                      {order.catalogItemId?.type === "service" ? "🛠" : "📦"}
+            orders.map((order) => {
+              const boutiqueItems = getBoutiqueItems(order);
+              const statusCfg = STATUS_CONFIG[order.status] || { label: order.status, color: "bg-gray-100 text-gray-600" };
+              return (
+                <div key={order._id} className="bg-white rounded-2xl p-4 space-y-3">
+                  {/* Header commande */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <IoReceiptOutline className="text-gray-400" />
+                      <span className="text-sm font-semibold text-gray-700">
+                        Commande #{order.invoice || order._id?.slice(-6).toUpperCase()}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        · {new Date(order.createdAt).toLocaleDateString("fr-FR")}
+                      </span>
                     </div>
+                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusCfg.color}`}>
+                      {statusCfg.label}
+                    </span>
+                  </div>
+
+                  {/* Client */}
+                  {order.user_info?.name && (
+                    <p className="text-xs text-gray-500">
+                      Client : {order.user_info.name}
+                      {order.user_info.email && ` · ${order.user_info.email}`}
+                    </p>
                   )}
-                  <div className="min-w-0">
-                    <p className="font-medium text-sm text-gray-800 truncate">
-                      {order.catalogItemId?.name || "Article supprimé"}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      Qté : {order.quantity}
-                      {order.unitPrice != null && (
-                        <> · {(order.unitPrice * order.quantity).toLocaleString("fr-FR")} {order.currency}</>
-                      )}
-                    </p>
-                    {order.note && (
-                      <p className="text-xs text-gray-500 mt-1 italic">"{order.note}"</p>
-                    )}
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      {order.customerName || order.customerEmail || "Client anonyme"} · {new Date(order.createdAt).toLocaleDateString("fr-FR")}
-                    </p>
+
+                  {/* Articles de cette boutique */}
+                  <div className="space-y-2">
+                    {boutiqueItems.length === 0 ? (
+                      <p className="text-xs text-gray-400 italic">Aucun article trouvé dans cette commande.</p>
+                    ) : boutiqueItems.map((item, idx) => (
+                      <div key={idx} className="flex items-center gap-3">
+                        {item.image?.[0] || item.image ? (
+                          <img
+                            src={Array.isArray(item.image) ? item.image[0] : item.image}
+                            alt=""
+                            className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-lg flex-shrink-0">
+                            {item.type === "service" ? "🛠" : "📦"}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-800 truncate">{getTitle(item)}</p>
+                          <p className="text-xs text-gray-400">
+                            Qté : {item.quantity}
+                            {item.price != null && (
+                              <> · {(item.price * item.quantity).toLocaleString("fr-FR")} FCFA</>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-
-                {/* Statut + actions */}
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${STATUS_CONFIG[order.status]?.color}`}>
-                    {STATUS_CONFIG[order.status]?.label}
-                  </span>
-
-                  {order.status === "pending" && (
-                    <>
-                      <button
-                        onClick={() => handleStatus(order._id, "confirmed")}
-                        disabled={!!actionLoading}
-                        className="flex items-center gap-1 text-xs bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
-                      >
-                        <IoCheckmarkOutline /> Confirmer
-                      </button>
-                      <button
-                        onClick={() => handleStatus(order._id, "cancelled")}
-                        disabled={!!actionLoading}
-                        className="flex items-center gap-1 text-xs border border-red-200 text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
-                      >
-                        <IoCloseOutline /> Refuser
-                      </button>
-                    </>
-                  )}
-
-                  {order.status === "confirmed" && (
-                    <button
-                      onClick={() => handleStatus(order._id, "completed")}
-                      disabled={!!actionLoading}
-                      className="flex items-center gap-1 text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
-                    >
-                      <IoCheckmarkOutline /> Terminer
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 

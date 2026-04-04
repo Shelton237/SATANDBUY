@@ -9,6 +9,7 @@ import {
 import BoutiqueDashboardLayout, { TYPE_CONFIG } from "@components/boutique/BoutiqueDashboardLayout";
 import BoutiqueServices from "@services/BoutiqueServices";
 import ProductServices from "@services/ProductServices";
+import OrderServices from "@services/OrderServices";
 import { UserContext } from "@context/UserContext";
 
 const StatCard = ({ icon: Icon, label, value, color, href }) => (
@@ -42,7 +43,7 @@ const BoutiqueDashboardPage = () => {
         if (!b) return;
 
         const [ordersRes, submissionsRes, approvedRes] = await Promise.all([
-          BoutiqueServices.getBoutiqueReceivedOrders({ limit: 5 }),
+          OrderServices.getBoutiqueOrders({ boutiqueId: b._id, limit: 5 }),
           ProductServices.getMySubmissions({ limit: 1 }),
           ProductServices.getMySubmissions({ limit: 1, approvalStatus: "approved" }),
         ]);
@@ -51,9 +52,9 @@ const BoutiqueDashboardPage = () => {
         setRecentOrders(allOrders);
         setOrders({
           total: ordersRes.total || 0,
-          pending: allOrders.filter((o) => o.status === "pending").length,
-          confirmed: allOrders.filter((o) => o.status === "confirmed").length,
-          cancelled: allOrders.filter((o) => o.status === "cancelled").length,
+          pending: allOrders.filter((o) => o.status === "Pending").length,
+          confirmed: allOrders.filter((o) => ["Sorting", "ReadyForDelivery", "Processing"].includes(o.status)).length,
+          cancelled: allOrders.filter((o) => o.status === "Cancel").length,
         });
 
         setCatalogCount(submissionsRes.totalDoc || 0);
@@ -67,8 +68,17 @@ const BoutiqueDashboardPage = () => {
   }, [userInfo]);
 
   const config = boutique ? (TYPE_CONFIG[boutique.businessType] || TYPE_CONFIG.other) : TYPE_CONFIG.other;
-  const STATUS_COLORS = { pending: "text-orange-500", confirmed: "text-emerald-500", completed: "text-blue-500", cancelled: "text-red-400" };
-  const STATUS_LABELS = { pending: "En attente", confirmed: "Confirmé", completed: "Terminé", cancelled: "Annulé" };
+  const STATUS_COLORS = { Pending: "text-orange-500", Sorting: "text-yellow-600", ReadyForDelivery: "text-blue-500", Processing: "text-indigo-500", Delivered: "text-emerald-500", Cancel: "text-red-400" };
+  const STATUS_LABELS = { Pending: "En attente", Sorting: "En traitement", ReadyForDelivery: "Prêt à livrer", Processing: "En livraison", Delivered: "Livré", Cancel: "Annulé" };
+
+  const getOrderSummary = (order) => {
+    const items = (order.cart || []).filter((i) => String(i.boutiqueId) === String(boutique?._id));
+    if (items.length === 0) return { label: "Commande", image: null };
+    const first = items[0];
+    const title = typeof first.title === "string" ? first.title : first.title?.fr || first.title?.en || "Produit";
+    const image = Array.isArray(first.image) ? first.image[0] : first.image;
+    return { label: items.length > 1 ? `${title} +${items.length - 1}` : title, image };
+  };
 
   return (
     <BoutiqueDashboardLayout title="Vue d'ensemble">
@@ -131,28 +141,27 @@ const BoutiqueDashboardPage = () => {
             </div>
           ) : (
             <div className="space-y-2">
-              {recentOrders.map((order) => (
-                <div key={order._id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
-                  {order.catalogItemId?.images?.[0] ? (
-                    <img src={order.catalogItemId.images[0]} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-lg flex-shrink-0">
-                      {order.catalogItemId?.type === "service" ? "🛠" : "📦"}
+              {recentOrders.map((order) => {
+                const { label, image } = getOrderSummary(order);
+                return (
+                  <div key={order._id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
+                    {image ? (
+                      <img src={image} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-lg flex-shrink-0">📦</div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800 truncate">{label}</p>
+                      <p className="text-xs text-gray-400">
+                        #{order.invoice} · {new Date(order.createdAt).toLocaleDateString("fr-FR")}
+                      </p>
                     </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-800 truncate">
-                      {order.catalogItemId?.name || "Article supprimé"}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      Qté : {order.quantity} — {new Date(order.createdAt).toLocaleDateString("fr-FR")}
-                    </p>
+                    <span className={`text-xs font-medium flex-shrink-0 ${STATUS_COLORS[order.status]}`}>
+                      {STATUS_LABELS[order.status]}
+                    </span>
                   </div>
-                  <span className={`text-xs font-medium flex-shrink-0 ${STATUS_COLORS[order.status]}`}>
-                    {STATUS_LABELS[order.status]}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

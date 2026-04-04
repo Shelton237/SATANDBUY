@@ -352,6 +352,30 @@ const confirmOrderDelivery = async (req, res) => {
   }
 };
 
+// GET /api/order/boutique?boutiqueId=xxx — commandes contenant des produits de cette boutique
+const getBoutiqueOrders = async (req, res) => {
+  try {
+    const { boutiqueId, page = 1, limit = 10, status = "" } = req.query;
+    if (!boutiqueId) return res.status(400).json({ message: "boutiqueId requis." });
+
+    const pages = Number(page);
+    const limits = Number(limit);
+    const skip = (pages - 1) * limits;
+
+    const query = { "cart.boutiqueId": String(boutiqueId) };
+    if (status) query.status = status;
+
+    const [orders, total] = await Promise.all([
+      Order.find(query).sort({ createdAt: -1 }).skip(skip).limit(limits),
+      Order.countDocuments(query),
+    ]);
+
+    res.json({ orders, total, pages, limits });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 module.exports = {
   addOrder,
   getOrderById,
@@ -361,4 +385,5 @@ module.exports = {
   addRazorpayOrder,
   getCustomerOrderBoard,
   confirmOrderDelivery,
+  getBoutiqueOrders,
 };

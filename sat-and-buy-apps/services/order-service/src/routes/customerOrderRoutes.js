@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { isAuth } = require("../middleware/auth");
+const { isAuth, isAuthAny } = require("../middleware/auth");
 const customerOrderController =
   require("@satandbuy/order-domain").controllers.customerOrder;
 const {
@@ -12,7 +12,11 @@ const {
   createOrderByRazorPay,
   getCustomerOrderBoard,
   confirmOrderDelivery,
+  getBoutiqueOrders,
 } = customerOrderController;
+
+// Commandes reçues pour une boutique (propriétaire — customer JWT)
+router.get("/boutique", isAuthAny, getBoutiqueOrders);
 
 router.use(isAuth);
 
