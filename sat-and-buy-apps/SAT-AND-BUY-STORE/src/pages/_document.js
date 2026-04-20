@@ -21,12 +21,15 @@ class MyDocument extends Document {
     return (
       <Html lang="fr">
         <Head>
-          <link rel="icon" href={setting?.favicon || "/sat-and-buy-favicon.png"} />
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+          <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;700&family=Open+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+          <link rel="icon" href={setting?.favicon || "/favicon.png"} />
           <meta
             property="og:title"
             content={
               setting?.meta_title ||
-              "Sat & Buy – Marketplace & services énergétiques"
+              "Diginova Store – Marketplace & boutiques en ligne"
             }
           />
           <meta property="og:type" content="website" />
@@ -34,24 +37,24 @@ class MyDocument extends Document {
             property="og:description"
             content={
               setting?.meta_description ||
-              "Boutique Sat & Buy : solutions solaires, équipements et prestations énergie."
+              "Diginova Store : découvrez des milliers de produits et boutiques locales. Commandez facilement en ligne."
             }
           />
           <meta
             name="keywords"
-            content={setting?.meta_keywords || "sat and buy, energie solaire, marketplace cameroun"}
+            content={setting?.meta_keywords || "diginova store, marketplace, boutiques en ligne, cameroun, e-commerce"}
           />
           <meta
             property="og:url"
             content={
-              setting?.meta_url || "https://satandbuy.dreamsdigital.cm/"
+              setting?.meta_url || "https://store.diginova.cm/"
             }
           />
           <meta
             property="og:image"
             content={
               setting?.meta_img ||
-              "https://satandbuy.dreamsdigital.cm/sat-and-buy-favicon.png"
+              "https://store.diginova.cm/logo/logo-color.png"
             }
           />
         </Head>

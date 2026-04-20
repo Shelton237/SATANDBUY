@@ -1,21 +1,12 @@
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import { IoArrowForward } from "react-icons/io5";
-import ProductServices from "@services/ProductServices";
-import ProductCard from "@components/product/ProductCard";
+import FeaturedItemCard from "./FeaturedItemCard";
 
-const FeaturedItemsSection = () => {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+const FeaturedItemsSection = ({ initialItems = [] }) => {
+  const items = initialItems;
+  const loading = false;
 
-  useEffect(() => {
-    ProductServices.getBoutiqueStoreProducts({ limit: 6 })
-      .then((res) => setProducts(res.products || []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
-
-  if (!loading && products.length === 0) return null;
+  if (items.length === 0) return null;
 
   return (
     <section className="py-10 bg-gray-50">
@@ -28,7 +19,7 @@ const FeaturedItemsSection = () => {
           </div>
           <Link
             href="/marche"
-            className="flex items-center gap-1 text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+            className="flex items-center gap-1 text-sm text-brand-blue hover:text-brand-blue-dark font-medium"
           >
             Voir tout <IoArrowForward />
           </Link>
@@ -50,8 +41,8 @@ const FeaturedItemsSection = () => {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-            {products.map((product) => (
-              <ProductCard key={product._id} product={product} />
+            {items.map((item) => (
+              <FeaturedItemCard key={item._id} item={item} />
             ))}
           </div>
         )}

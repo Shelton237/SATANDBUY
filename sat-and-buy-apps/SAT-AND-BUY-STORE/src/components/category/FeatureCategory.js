@@ -48,8 +48,11 @@ const FeatureCategory = () => {
             return (
               <li key={i + 1} className="group">
                 <div
+                  role="button"
+                  tabIndex={0}
                   onClick={() => handleCategoryClick(name, category.slug)}
-                  className="relative cursor-pointer rounded-xl overflow-hidden bg-gray-100 shadow-sm hover:shadow-md transition-shadow duration-300"
+                  onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && handleCategoryClick(name, category.slug)}
+                  className="relative cursor-pointer rounded-xl overflow-hidden bg-gray-100 shadow-sm hover:shadow-md transition-shadow duration-300 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:ring-offset-2"
                 >
                   {/* Image principale */}
                   <div className="relative w-full h-36 sm:h-40 md:h-44">
@@ -83,7 +86,7 @@ const FeatureCategory = () => {
                               e.stopPropagation();
                               handleCategoryClick(childName, child.slug);
                             }}
-                            className="text-xs text-gray-500 bg-gray-100 hover:bg-emerald-50 hover:text-emerald-600 rounded-full px-2 py-0.5 transition-colors font-serif truncate max-w-full"
+                            className="text-xs text-gray-500 bg-gray-100 hover:bg-blue-50 hover:text-brand-blue rounded-full px-2 py-0.5 transition-colors font-serif truncate max-w-full"
                           >
                             {childName}
                           </button>

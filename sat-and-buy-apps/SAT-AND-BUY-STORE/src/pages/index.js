@@ -1,7 +1,7 @@
 import { SidebarContext } from "@context/SidebarContext";
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { IoBriefcaseOutline } from "react-icons/io5";
+import { IoBriefcaseOutline, IoSearchOutline } from "react-icons/io5";
 
 //internal import
 import Layout from "@layout/Layout";
@@ -12,6 +12,7 @@ import OfferCard from "@components/offer/OfferCard";
 import StickyCart from "@components/cart/StickyCart";
 import Loading from "@components/preloader/Loading";
 import ProductServices from "@services/ProductServices";
+import BoutiqueServices from "@services/BoutiqueServices";
 import ProductCard from "@components/product/ProductCard";
 import MainCarousel from "@components/carousel/MainCarousel";
 import FeatureCategory from "@components/category/FeatureCategory";
@@ -20,10 +21,11 @@ import CMSkeleton from "@components/preloader/CMSkeleton";
 import BusinessCTA from "@components/boutique/BusinessCTA";
 import FeaturedItemsSection from "@components/boutique/FeaturedItemsSection";
 
-const Home = ({ popularProducts, discountProducts, services, attributes }) => {
+const Home = ({ popularProducts, discountProducts, services, attributes, featuredItems }) => {
   const router = useRouter();
   const { isLoading, setIsLoading } = useContext(SidebarContext);
   const { loading, error, storeCustomizationSetting } = useGetSetting();
+  const [searchQuery, setSearchQuery] = useState("");
 
   // console.log("storeCustomizationSetting", storeCustomizationSetting);
 
@@ -41,12 +43,38 @@ const Home = ({ popularProducts, discountProducts, services, attributes }) => {
         <Loading loading={isLoading} />
       ) : (
         <Layout>
-          <div className="min-h-screen">
+          <div>
             <StickyCart />
             <div className="bg-white">
               {/* Hero — full width */}
               <div className="mx-auto py-5 max-w-screen-2xl px-3 sm:px-10">
                 <MainCarousel />
+                {/* Barre de recherche hero */}
+                <div className="mt-4">
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (searchQuery.trim()) router.push(`/search?query=${encodeURIComponent(searchQuery.trim())}`);
+                    }}
+                    className="flex items-center bg-white border-2 border-brand-blue rounded-xl shadow-md overflow-hidden max-w-2xl mx-auto"
+                  >
+                    <IoSearchOutline className="ml-4 text-brand-blue text-xl flex-shrink-0" aria-hidden="true" />
+                    <input
+                      type="search"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Rechercher un produit, service, boutique…"
+                      className="flex-1 px-3 py-3 text-sm text-gray-700 outline-none bg-transparent placeholder-gray-400"
+                      aria-label="Rechercher"
+                    />
+                    <button
+                      type="submit"
+                      className="bg-brand-blue hover:bg-brand-blue-dark text-white font-semibold text-sm px-6 py-3 transition-colors flex-shrink-0"
+                    >
+                      Chercher
+                    </button>
+                  </form>
+                </div>
               </div>
 
               {/* Coupon strip — below hero, compact */}
@@ -157,11 +185,11 @@ const Home = ({ popularProducts, discountProducts, services, attributes }) => {
 
             {/* services section */}
             {services?.length > 0 && (
-              <div className="bg-indigo-50 lg:py-16 py-10">
+              <div className="bg-blue-50 lg:py-16 py-10">
                 <div className="mx-auto max-w-screen-2xl px-3 sm:px-10">
                   <div className="mb-10 flex justify-center">
                     <div className="text-center w-full lg:w-2/5">
-                      <span className="inline-flex items-center gap-2 mb-3 px-4 py-1.5 rounded-full bg-indigo-100 text-indigo-600 text-sm font-semibold">
+                      <span className="inline-flex items-center gap-2 mb-3 px-4 py-1.5 rounded-full bg-blue-100 text-brand-blue text-sm font-semibold">
                         <IoBriefcaseOutline size={15} />
                         Nos Services
                       </span>
@@ -185,7 +213,7 @@ const Home = ({ popularProducts, discountProducts, services, attributes }) => {
                   <div className="mt-8 text-center">
                     <a
                       href="/services"
-                      className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full border-2 border-indigo-400 text-indigo-600 font-semibold text-sm hover:bg-indigo-500 hover:text-white hover:border-indigo-500 transition-all"
+                      className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full border-2 border-brand-blue text-brand-blue font-semibold text-sm hover:bg-brand-blue hover:text-white hover:border-brand-blue transition-all"
                     >
                       Voir tous les services
                     </a>
@@ -195,7 +223,7 @@ const Home = ({ popularProducts, discountProducts, services, attributes }) => {
             )}
 
             {/* Produits & Services en vedette — boutiques partenaires */}
-            <FeaturedItemsSection />
+            <FeaturedItemsSection initialItems={featuredItems} />
 
             {/* CTA Business / Boutique */}
             <BusinessCTA />
@@ -204,7 +232,7 @@ const Home = ({ popularProducts, discountProducts, services, attributes }) => {
             {storeCustomizationSetting?.home?.delivery_status && (
               <div className="block mx-auto max-w-screen-2xl">
                 <div className="mx-auto max-w-screen-2xl px-4 sm:px-10">
-                  <div className="lg:p-16 p-6 bg-emerald-500 shadow-sm border rounded-lg">
+                  <div className="lg:p-16 p-6 bg-brand-coral shadow-sm border rounded-lg">
                     <CardTwo />
                   </div>
                 </div>
@@ -216,7 +244,7 @@ const Home = ({ popularProducts, discountProducts, services, attributes }) => {
               discountProducts?.length > 0 && (
                 <div
                   id="discount"
-                  className="bg-gray-50 lg:py-16 py-10 mx-auto max-w-screen-2xl px-3 sm:px-10"
+                  className="bg-white lg:py-16 py-10 mx-auto max-w-screen-2xl px-3 sm:px-10"
                 >
                   <div className="mb-10 flex justify-center">
                     <div className="text-center w-full lg:w-2/5">
@@ -289,13 +317,14 @@ export const getServerSideProps = async (context) => {
 
   try {
     console.log("[SSR] Fetching data for Home page...");
-    const [data, servicesData, attributes] = await Promise.all([
+    const [data, servicesData, attributes, featuredData] = await Promise.all([
       ProductServices.getShowingStoreProducts({
         category: _id ? _id : "",
         title: query ? query : "",
       }),
       ProductServices.getShowingStoreServices().catch(() => ({ products: [] })),
       AttributeServices.getShowingAttributes(),
+      BoutiqueServices.getFeaturedCatalogItems({ page: 1, limit: 6 }).catch(() => ({ items: [] })),
     ]);
     console.log("[SSR] Data fetched successfully:", {
       productCount: data?.popularProducts?.length,
@@ -315,6 +344,7 @@ export const getServerSideProps = async (context) => {
         services: servicesData?.products || [],
         cookies: cookies || null,
         attributes: attributes || [],
+        featuredItems: featuredData?.items || [],
       },
     };
   } catch (error) {
@@ -326,6 +356,7 @@ export const getServerSideProps = async (context) => {
         services: [],
         cookies: cookies || null,
         attributes: [],
+        featuredItems: [],
         ssrError: error.message
       },
     };

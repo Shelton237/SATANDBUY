@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -14,6 +14,15 @@ import useUtilsFunction from "@hooks/useUtilsFunction";
 const MainCarousel = () => {
   const { storeCustomizationSetting } = useGetSetting();
   const { showingTranslateValue, showingUrl, showingImage } = useUtilsFunction();
+  const [reducedMotion, setReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReducedMotion(mq.matches);
+    const handler = (e) => setReducedMotion(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   const sliderData = [
     {
@@ -61,12 +70,18 @@ const MainCarousel = () => {
   // Only show slides that have an image
   const validSlides = sliderData.filter((s) => s.image);
 
+  if (validSlides.length === 0) {
+    return (
+      <div className="w-full rounded-xl overflow-hidden shadow-md animate-pulse bg-gray-200 h-56 sm:h-72 md:h-80 lg:h-[420px]" />
+    );
+  }
+
   return (
     <div className="w-full rounded-xl overflow-hidden shadow-md">
       <Swiper
         spaceBetween={0}
         centeredSlides={true}
-        autoplay={{
+        autoplay={reducedMotion ? false : {
           delay: 5000,
           disableOnInteraction: false,
           pauseOnMouseEnter: true,
@@ -108,7 +123,7 @@ const MainCarousel = () => {
                   {item.buttonName && item.url && (
                     <Link
                       href={item.url}
-                      className="inline-block text-sm font-serif font-semibold px-6 py-2.5 bg-emerald-500 text-white rounded-md hover:bg-emerald-600 transition-colors shadow-lg"
+                      className="inline-block text-sm font-serif font-semibold px-6 py-2.5 bg-brand-coral text-white rounded-md hover:bg-brand-coral-dark transition-colors shadow-lg"
                     >
                       {item.buttonName}
                     </Link>
@@ -146,7 +161,7 @@ const MainCarousel = () => {
           height: 8px;
         }
         .hero-swiper .swiper-pagination-bullet-active {
-          background: #10b981;
+          background: #E8603A;
           opacity: 1;
           width: 22px;
           border-radius: 4px;
